@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <!--
+      SPDX-FileCopyrightText: Taylor Campbell, John Cowan, Wolfgang Corcoran-Mathe, Marc Nieper-Wißkirchen
+      SPDX-License-Identifier: MIT
+    -->
+  <head>
+    <meta charset="utf-8">
+    <title>SRFI 255: Restarting conditions</title>
+    <link href="/favicon.png" rel="icon" sizes="192x192" type="image/png">
+    <link rel="stylesheet" href="https://srfi.schemers.org/srfi.css" type="text/css">
+    <meta name="viewport" content="width=device-width, initial-scale=1"></head>
+  <body>
+    <h1><a href="https://srfi.schemers.org/"><img class="srfi-logo" src="https://srfi.schemers.org/srfi-logo.svg" alt="SRFI surfboard logo" /></a>255: Restarting conditions</h1>
+
+<p>Wolfgang Corcoran-Mathe (co-author and revised implementation), and
+  Marc Nieper-Wißkirchen (co-author)</p>
+
+<h2 id="status">Status</h2>
+
+    <p>This SRFI is currently in <em>withdrawn</em> status.  Here is <a href="https://srfi.schemers.org/srfi-process.html">an explanation</a> of each status that a SRFI can hold.  To provide input on this SRFI, please send email to <code><a href="mailto:srfi+minus+255+at+srfi+dotschemers+dot+org">srfi-255@<span class="antispam">nospam</span>srfi.schemers.org</a></code>.  To subscribe to the list, follow <a href="https://srfi.schemers.org/srfi-list-subscribe.html">these instructions</a>.  You can access previous messages via the mailing list <a href="https://srfi-email.schemers.org/srfi-255/">archive</a>.</p>
+    <ul>
+      <li>Received: 2024-09-13
+        <p>This SRFI was forked from SRFI 249 on that date.</p></li>
+      <li>60-day deadline: 2024-11-12</li>
+      <li>Draft #1 published: 2024-09-13</li>
+    </ul>
+
+<h2 id="abstract">Abstract</h2>
+
+<p>When an exceptional situation is encountered by a program, it may
+create a <em>condition</em> object describing the situation and then
+signal the condition and pass control to a condition handler. The
+signaler and handler are two different parts of a system, between which
+there is a barrier of abstraction. In order to recover gracefully and
+flexibly from exceptional situations, however, the signaler can provide
+multiple ways by which the handler can restart the computation, some of
+which may require extra input. Often, the decision of which method of
+recovery to choose is left up to a human user, who may be prompted for
+the input needed to recover. This SRFI proposes a simple mechanism
+called <em>restarters</em> to encapsulate the information necessary to
+restart a computation with associated interactive prompters.</p>
+
+<h2 id="rationale">Rationale</h2>
+<p>An effective and flexible system for gracefully handling and
+recovering from exceptional situations is a necessity for any large
+software system. Most condition or exception systems provide only a
+one-way flow of information from the signaler to the handler, however:
+they offer no way to communicate possible methods of recovery to the
+signaler. Common Lisp, MIT Scheme, and Dylan are almost unique in this
+regard: they provide comprehensive facilities for restarting in exceptional
+situations. This proposal is considerably simpler than Common Lisp’s or
+Dylan’s restart systems, more in the spirit of Scheme, however. It is
+historically related to MIT Scheme’s system.</p>
+<p>One important feature for a restart system to provide is
+interactivity. Though purely programmatic condition recovery is useful,
+it is well-acknowledged by the designers and users of Common Lisp’s
+condition system that the ability to <em>interactively</em> choose a
+method of recovery for a condition is useful.  This ability, built-in to the Common
+Lisp language, is one of the primary reasons for the power of Common
+Lisp development and debugging environments. Though much of the baggage
+in Common Lisp’s restart system was deemed unnecessary for this
+proposal, interactivity is one crucial feature that was included. In
+this SRFI, the interactivity is provided by an <em>interactor
+procedure</em> that by default is provided by the implementation, but
+can be overridden by the user.</p>
+<p>One major difference between the CL and Scheme condition systems is
+that when a CL handler exits to its caller, the next outer handler is
+invoked, whereas when a Scheme handler exits, either the code that
+raised the condition is resumed (if <code>raise-continuably</code> was
+used), or another error is signaled (if <code>raise</code> was used);
+the condition must be re-raised in order to give the next outer handler
+control. Therefore, in CL the only way for the signaler to regain
+control is through a restart, but in Scheme restarts are just one way of
+handling returns from exceptions.</p>
+
+<h2 id="specification">Specification</h2>
+
+<p>A <em>restarter</em> is an object of a new disjoint type with three
+fields:</p>
+<ul>
+<li><em>tag</em> - a symbol identifying this restarter</li>
+<li><em>description</em> - a list of strings that describes the method
+of recovery and the values, if any, needed for recovery</li>
+<li><em>invoker</em> - a procedure that actually performs the recovery;
+the number of arguments it expects is equal to the length of
+<em>description</em> minus 1.</li>
+</ul>
+<p>Restarters can be available in one of two ways. They can be
+<em>ambient restarters</em>, each of which is available during some
+dynamic extent of the program, or they can be the value of some variable
+or part of some data structure.</p>
+<h3 id="procedures">Procedures</h3>
+<p><code>(make-restarter </code><em>tag description
+invoker</em><code>)</code> → <em>restarter</em></p>
+<p>Returns a restarter with the specified tag, description, and
+invoker.</p>
+<p>The <em>tag</em> argument is a symbol.</p>
+<p>The <em>description</em> argument is a list whose car is a string
+that describes the effect of invoking the restarter. By convention it is
+a complete sentence in a natural language using the standard punctuation
+conventions of that language. It may also be a question or a command.
+The cdr of <em>description</em> is a list of strings that describe the
+values to be passed to the invoker in the same natural language: they
+may be phrases or whole sentences.</p>
+<p>The <em>invoker</em> argument is a recovery procedure.</p>
+<p><code>(restarter? </code><em>obj</em><code>)</code> →
+<em>boolean</em></p>
+<p>Returns <code>#t</code> if <em>obj</em> is a restarter and
+<code>#f</code> otherwise.</p>
+<p>Examples:</p>
+<pre><code>(restarter? return-zero-restarter) → #t
+(restarter? 20) → #f</code></pre>
+<p><code>(restarter-tag </code><em>restarter</em><code>)</code> →
+<em>tag</em><br />
+<code>(restarter-description </code><em>restarter</em><code>)</code> →
+<em>list-of-strings</em></p>
+<p>Returns the tag / description of <em>restarter</em>. It is an error
+to mutate <em>list-of-strings</em> or any of its members.</p>
+<p><code>(restart </code><em>restarter arg</em> …<code>)</code> →
+<em>values</em> (may not return)</p>
+<p>Invokes the invoker procedure of <em>restarter</em> on the
+<em>args</em>, and returns however many values the invoker does. If the
+invoker does not return, <code>restart</code> does not return
+either.</p>
+<p>Invoking the <code>return-zero</code> restarter:</p>
+<pre><code>(restart return-zero) → 0</code></pre>
+<p><code>(ambient-restarters)</code></p>
+<p>Returns the current list of ambient restarters created by
+<code>make-restarter</code> and established by
+<code>with-restarter</code>. It is an error to mutate this list.
+<code>Ambient-restarters</code> is normally a SRFI 39 / R7RS parameter,
+but directly modifying it with <code>parameterize</code> should be
+avoided.</p>
+<p><code>(with-restarters </code><em>restarters
+thunk</em><code>)</code></p>
+<p>Establishes <em>restarters</em>, which may be a single restarter, a
+list of restarters, or a SRFI 222 compound object, as ambient restarters
+on top of the existing ambient restarters. It is an error if any of the
+restarters specified by <em>restarters</em> have the same tag. Then
+<code>with-restarter</code> invokes <em>thunk</em> with no arguments,
+after which the restarters are disestablished and
+<code>with-restarter</code> returns whatever <em>thunk</em> returns.</p>
+<p><code>(find-restarter </code><em>tag restarters</em><code>)</code> →
+<em>restarter</em> or <code>#f</code></p>
+<p>Searches <em>restarters</em> for a restarter whose tag is the same
+(in the sense of <code>symbol=?</code>) as <em>tag</em>. The
+<em>restarters</em> argument may be a single restarter, a list of
+restarters, or a <a
+href="https://srfi.schemers.org/srfi-222/srfi-222.html">SRFI 222</a>
+compound object. If no such restarter is found in <em>restarters</em>,
+the value of <code>(ambient-restarters)</code> is searched instead.
+Failing that as well, <code>#f</code> is returned.</p>
+<p><code>(collect-restarters </code><em>restarters</em><code>)</code></p>
+<p>The argument <em>restarters</em> has the same semantics as the
+<em>restarters</em> argument of <code>find-restarter</code>. All
+available restarters are collected into a list which is then returned,
+giving the restarters in <em>restarters</em> priority over the
+restarters in <code>(ambient-restarters)</code>, but excluding those
+whose tag is the same (in the sense of <code>symbol=?</code>) as a
+higher-priority restarter already on the list. Note that if
+<em>restarters</em> is a list, earlier elements in the list take
+priority over later ones, and the same is true for subobjects in a
+compound object.</p>
+<p><code>interactor</code></p>
+<p>A SRFI 39 / R7RS parameter whose value is an interactor procedure.
+The general contract of such a procedure is as follows:</p>
+<p>It accepts one argument, a list of restarters. The tags and the cars
+of the descriptions of the restarters are made available to the user.
+The user is then allowed to choose one of the tags.<br />
+Then the remaining strings in the description of the chosen restarter
+are made available to the user, and the user is allowed to specify a
+value corresponding to each string.</p>
+<p>The interactor then calls <code>restart</code> on the restarter and
+the user’s values and returns whatever <code>restart</code> returns.</p>
+<p>The sample interactor outputs the tags and description strings with
+<code>display</code> and reads the chosen tag and values using
+<code>read</code>. Here is a possible example of the interaction:</p>
+<pre><code>The following actions are available:
+return-zero: Return zero.
+return-numerator: Return the numerator.
+use-value: Choose a value to return.
+abort: Abort the computation.
+
+Which action do you choose:  use-value
+What is the value you wish to use? 32</code></pre>
+<p>In this case the restarter will return 32.</p>
+<p><code>(restart-interactively </code><em>restarters</em><code>)</code>
+→ <em>values</em> (may not return)</p>
+<p>Equivalent to
+<code>((interactor) (collect-restarters </code><em>restarters</em><code>))</code></p>
+<h3 id="standard-restart-tags">Standard restart tags</h3>
+<p>The following tags by convention hold to particular behaviour
+protocols:</p>
+<p><code>abort</code></p>
+<p>Completely aborts the computation, usually returning to some sort of
+initial user input such as a REPL. The invoker of an <code>abort</code>
+restarter accepts zero arguments, is typically an ambient restarter, and
+normally does not return.</p>
+<p><code>ignore</code></p>
+<p>Ignores the condition and proceeds. The invoker of an
+<code>ignore</code> restarter accepts zero arguments, is typically an
+ambient restarter, and normally returns an unspecified value.</p>
+<p><code>retry</code></p>
+<p>Simply retries a whole computation from a certain point, with no
+explicitly altered inputs. Some implicit environmental changes are
+expected to have taken place. The invoker of a <code>retry</code>
+restarter accepts zero arguments, may or may not be an ambient
+restarter, and normally returns an unspecified value.</p>
+<p><code>use-value</code></p>
+<p>Retries a computation with a given input value substituted for some
+invalid value in the original input. The invoker of a
+<code>use-value</code> restarter accepts at least one argument, the new
+value(s) to substitute. It is may or may not be an ambient restarter,
+and normally returns an unspecified value.</p>
+<p><code>store-value</code></p>
+<p>These restarter tag is in every respect like <code>use-value</code>
+restarters except that it is meant to store the input value somewhere,
+so that the old one is completely replaced, rather than just using the
+input value temporarily and possibly accidentally reusing the old value
+later and signaling another error.</p>
+<h2 id="additional-recommendations">Additional recommendations</h2>
+<p>It is highly recommended that Scheme systems integrate restarters
+into their condition systems and debuggers. This can be achieved by
+using SRFI 222 compound objects to represent conditions, with restarters
+as members to represent suitable recovery strategies among the
+subobjects.</p>
+
+<h2 id="implementation">Implementation</h2>
+<p>The implementation is available at
+<a href="https://github.com/scheme-requests-for-implementation/srfi-255">Github</a>.
+
+<h2 id="acknowledgements">Acknowledgements</h2>
+
+<p>This SRFI is based on
+<a href="https://mumble.net/~campbell/proposals/restart.text">a
+proposal</a> by Taylor Campbell.</p>
+
+<p>John Cowan was author
+of <a href="https://srfi.schemers.org/srfi-249/">SRFI 249</a>, from
+which this SRFI is derived).</p>
+
+<p>Arvydas Silanskas wrote the initial implementation of SRFI 249.</p>
+
+<p>Wolfgang Corcoran-Mathe wrote the revised implementation of SRFI 249.</p>
+
+<h2 id="copyright">Copyright</h2>
+<p>&copy; 2023 Taylor Campbell, John Cowan, Wolfgang
+Corcoran-Mathe), Arvydas Silanskas.</p>
+
+<p>
+  Permission is hereby granted, free of charge, to any person
+  obtaining a copy of this software and associated documentation files
+  (the "Software"), to deal in the Software without restriction,
+  including without limitation the rights to use, copy, modify, merge,
+  publish, distribute, sublicense, and/or sell copies of the Software,
+  and to permit persons to whom the Software is furnished to do so,
+  subject to the following conditions:</p>
+
+<p>
+  The above copyright notice and this permission notice (including the
+  next paragraph) shall be included in all copies or substantial
+  portions of the Software.</p>
+<p>
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+  BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+  ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+  CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.</p>
+
+  <hr>
+  <address>Editor: <a href="mailto:srfi-editors+at+srfi+dot+schemers+dot+org">Arthur A. Gleckler</a></address></body></html>

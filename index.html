@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+    <head>
+      <!-- SPDX-FileCopyrightText: 2024 Arthur A. Gleckler -->
+      <!-- SPDX-License-Identifier: MIT -->
+      <title>Restarting conditions</title>
+      <link href="/admin.css" rel="stylesheet">
+      <link href="/list.css" rel="stylesheet">
+      <link href="/favicon.png" rel="icon" sizes="192x192" type="image/png">
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <script type="text/x-mathjax-config">MathJax.Hub.Config({tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});</script>
+      <script crossorigin="anonymous" integrity="sha384-Ra6zh6uYMmH5ydwCqqMoykyf1T/+ZcnOQfFPhDrp2kI4OIxadnhsvvA2vv9A7xYv" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript"></script></head>
+    <body>
+      <h1>SRFI 255: Restarting conditions</h1>
+      <p class="authors">by Wolfgang Corcoran-Mathe and Marc Nieper-Wißkirchen</p>
+      <p class="based-on"></p>
+      <p class="status">status: <em>draft</em> (2023-11-13)</p>
+      <p class="keywords">keywords: <a href="https://srfi.schemers.org/?keywords=exceptions">Exceptions</a></p><span class="see-also">See also <a href="/srfi-255/">SRFI 255: Restarting conditions</a>.</span>
+      <ul class="info">
+        <li><a href="srfi-255.html">The SRFI Document</a></li>
+        <li><a href="https://srfi-email.schemers.org/srfi-255/">Discussion Archive</a></li>
+        <li><a href="https://github.com/scheme-requests-for-implementation/srfi-255">Git repo (on GitHub)</a></li>
+        <li><a href="mailto:srfi-255@srfi.schemers.org">srfi-255@<span class="antispam">nospam</span>srfi.schemers.org (subscribers only)</a></li>
+        <li><span class="firefox-column-workaround">
+            <form method="POST" action="https://www.simplelists.com/subscribe.php">
+              <div class="title">Subscribe to srfi-255 mailing list</div><input name="email" placeholder="email address" tabindex="1" type="email"><input name="name" placeholder="full name" tabindex="2" type="text">
+              <p><input id="sub-digest" name="digest" tabindex="3" type="checkbox" value="digest"><label for="sub-digest">daily digest?</label></p><input class="submit" name="submit" tabindex="4" type="submit" value="Subscribe to srfi-255"><input type="hidden" name="action" value="subscribe"><input type="hidden" name="list" value="srfi-255@srfi.schemers.org"></form></span></li>
+        <li><span class="firefox-column-workaround">
+            <form method="POST" action="https://www.simplelists.com/subscribe.php">
+              <div class="title">Unsubscribe from srfi-255 mailing list</div><input name="email" placeholder="email address" tabindex="5" type="email"><input class="submit" name="submit" tabindex="6" type="submit" value="Unsubscribe from srfi-255"><input type="hidden" name="action" value="unsubscribe"><input name="list" type="hidden" value="srfi-255@srfi.schemers.org"></form></span></li></ul>
+      <h2>Abstract</h2><p>When an exceptional situation is encountered by a program, it may create a <em>condition</em> object describing the situation and then signal the condition and pass control to a condition handler. The signaler and handler are two different parts of a system, between which there is a barrier of abstraction. In order to recover gracefully and flexibly from exceptional situations, however, the signaler can provide multiple ways by which the handler can restart the computation, some of which may require extra input. Often, the decision of which method of recovery to choose is left up to a human user, who may be prompted for the input needed to recover. This SRFI proposes a simple mechanism called <em>restarters</em> to encapsulate the information necessary to restart a computation with associated interactive prompters.</p></body></html>
