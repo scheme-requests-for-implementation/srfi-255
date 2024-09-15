@@ -9,6 +9,30 @@
     <title>SRFI 255: Restarting conditions</title>
     <link href="/favicon.png" rel="icon" sizes="192x192" type="image/png">
     <link rel="stylesheet" href="https://srfi.schemers.org/srfi.css" type="text/css">
+    <style>
+      <!--
+      /* Names of Scheme types: boolean, pair, etc. */
+      span.type-meta { font-style: italic }
+
+      dt {
+          font-style: italic;
+          margin-top: 0.5em;
+          clear: both
+      }
+
+      dt.tag-name {
+          font-family: monospace;
+          font-style: normal
+      }
+
+      /* Variables in syntax forms. */
+      var.syn { font-style: normal; }
+      var.syn:before { content: "\27E8"; }
+      var.syn:after  { content: "\27E9"; }
+
+      pre.example { margin-left: 2em; }
+      -->
+    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1"></head>
   <body>
     <h1><a href="https://srfi.schemers.org/"><img class="srfi-logo" src="https://srfi.schemers.org/srfi-logo.svg" alt="SRFI surfboard logo" /></a>255: Restarting conditions</h1>
@@ -26,48 +50,64 @@
       <li>Draft #1 published: 2024-09-13</li>
     </ul>
 
+<h2 id="table-of-contents">Table of Contents</h2>
+
+<ol>
+  <li><a href="#abstract">Abstract</a></li>
+  <li><a href="#issues">Issues</a></li>
+  <li><a href="#rationale">Rationale</a></li>
+  <li><a href="#specification">Specification</a>
+    <ol>
+      <li><a href="#procedures">Procedures</a></li>
+      <li><a href="#syntax">Syntax</a></li>
+    </ol>
+  </li>
+  <li><a href="#implementation">Implementation</a></li>
+  <li><a href="#acknowledgements">Acknowledgements</a></li>
+  <li><a href="#copyright">Copyright</a></li>
+</ol>
+
 <h2 id="abstract">Abstract</h2>
 
-<p>When an exceptional situation is encountered by a program, it may
-create a <em>condition</em> object describing the situation and then
-signal the condition and pass control to a condition handler. The
+<p>When an exceptional situation is encountered by a program, it
+usually creates a condition object describing the situation and then
+passes control to an exception handler. The
 signaler and handler are two different parts of a system, between which
 there is a barrier of abstraction. In order to recover gracefully and
 flexibly from exceptional situations, however, the signaler can provide
 multiple ways by which the handler can restart the computation, some of
 which may require extra input. Often, the decision of which method of
 recovery to choose is left up to a human user, who may be prompted for
-the input needed to recover. This SRFI proposes a simple mechanism
-called <em>restarters</em> to encapsulate the information necessary to
-restart a computation with associated interactive prompters.</p>
+the input needed to recover. This SRFI proposes a mechanism
+called <dfn>restarters</dfn> which extends the R6RS condition system to
+encapsulate the information necessary to restart a computation. We also
+describe the behavior and interface for <dfn>interactor</dfn> procedures,
+which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
 
-None at present.
+<p>Should <code>with-restarters</code> provide a way to
+control which kinds of conditions can be restarted? Currently,
+<code>with-restarters</code> is specified to restart any exception
+that occurs.</p>
 
 <h2 id="rationale">Rationale</h2>
+
 <p>An effective and flexible system for gracefully handling and
 recovering from exceptional situations is a necessity for any large
-software system. Most condition or exception systems provide only a
-one-way flow of information from the signaler to the handler, however:
-they offer no way to communicate possible methods of recovery to the
-signaler. Common Lisp, MIT Scheme, and Dylan are almost unique in this
-regard: they provide comprehensive facilities for restarting in exceptional
-situations. This proposal is considerably simpler than Common Lisp’s or
-Dylan’s restart systems, more in the spirit of Scheme, however. It is
-historically related to MIT Scheme’s system.</p>
+software system. …</p>
+
 <p>One important feature for a restart system to provide is
 interactivity. Though purely programmatic condition recovery is useful,
 it is well-acknowledged by the designers and users of Common Lisp’s
 condition system that the ability to <em>interactively</em> choose a
 method of recovery for a condition is useful.  This ability, built-in to the Common
 Lisp language, is one of the primary reasons for the power of Common
-Lisp development and debugging environments. Though much of the baggage
-in Common Lisp’s restart system was deemed unnecessary for this
-proposal, interactivity is one crucial feature that was included. In
-this SRFI, the interactivity is provided by an <em>interactor
-procedure</em> that by default is provided by the implementation, but
+Lisp development and debugging environments. In
+this SRFI, the interactivity is provided by an <dfn>interactor
+procedure</dfn> that by default is provided by the implementation, but
 can be overridden by the user.</p>
+
 <p>One major difference between the CL and Scheme condition systems is
 that when a CL handler exits to its caller, the next outer handler is
 invoked, whereas when a Scheme handler exits, either the code that
@@ -80,155 +120,228 @@ handling returns from exceptions.</p>
 
 <h2 id="specification">Specification</h2>
 
-<p>A <em>restarter</em> is an object of a new disjoint type with three
-fields:</p>
-<ul>
-<li><em>tag</em> - a symbol identifying this restarter</li>
-<li><em>description</em> - a list of strings that describes the method
-of recovery and the values, if any, needed for recovery</li>
-<li><em>invoker</em> - a procedure that actually performs the recovery;
-the number of arguments it expects is equal to the length of
-<em>description</em> minus 1.</li>
-</ul>
-<p>Restarters can be available in one of two ways. They can be
-<em>ambient restarters</em>, each of which is available during some
-dynamic extent of the program, or they can be the value of some variable
-or part of some data structure.</p>
-<h3 id="procedures">Procedures</h3>
-<p><code>(make-restarter </code><em>tag description
-invoker</em><code>)</code> → <em>restarter</em></p>
-<p>Returns a restarter with the specified tag, description, and
-invoker.</p>
-<p>The <em>tag</em> argument is a symbol.</p>
-<p>The <em>description</em> argument is a list whose car is a string
-that describes the effect of invoking the restarter. By convention it is
-a complete sentence in a natural language using the standard punctuation
-conventions of that language. It may also be a question or a command.
-The cdr of <em>description</em> is a list of strings that describe the
-values to be passed to the invoker in the same natural language: they
-may be phrases or whole sentences.</p>
-<p>The <em>invoker</em> argument is a recovery procedure.</p>
-<p><code>(restarter? </code><em>obj</em><code>)</code> →
-<em>boolean</em></p>
-<p>Returns <code>#t</code> if <em>obj</em> is a restarter and
-<code>#f</code> otherwise.</p>
-<p>Examples:</p>
-<pre><code>(restarter? return-zero-restarter) → #t
-(restarter? 20) → #f</code></pre>
-<p><code>(restarter-tag </code><em>restarter</em><code>)</code> →
-<em>tag</em><br />
-<code>(restarter-description </code><em>restarter</em><code>)</code> →
-<em>list-of-strings</em></p>
-<p>Returns the tag / description of <em>restarter</em>. It is an error
-to mutate <em>list-of-strings</em> or any of its members.</p>
-<p><code>(restart </code><em>restarter arg</em> …<code>)</code> →
-<em>values</em> (may not return)</p>
-<p>Invokes the invoker procedure of <em>restarter</em> on the
-<em>args</em>, and returns however many values the invoker does. If the
-invoker does not return, <code>restart</code> does not return
-either.</p>
-<p>Invoking the <code>return-zero</code> restarter:</p>
-<pre><code>(restart return-zero) → 0</code></pre>
-<p><code>(ambient-restarters)</code></p>
-<p>Returns the current list of ambient restarters created by
-<code>make-restarter</code> and established by
-<code>with-restarter</code>. It is an error to mutate this list.
-<code>Ambient-restarters</code> is normally a SRFI 39 / R7RS parameter,
-but directly modifying it with <code>parameterize</code> should be
-avoided.</p>
-<p><code>(with-restarters </code><em>restarters
-thunk</em><code>)</code></p>
-<p>Establishes <em>restarters</em>, which may be a single restarter, a
-list of restarters, or a SRFI 222 compound object, as ambient restarters
-on top of the existing ambient restarters. It is an error if any of the
-restarters specified by <em>restarters</em> have the same tag. Then
-<code>with-restarter</code> invokes <em>thunk</em> with no arguments,
-after which the restarters are disestablished and
-<code>with-restarter</code> returns whatever <em>thunk</em> returns.</p>
-<p><code>(find-restarter </code><em>tag restarters</em><code>)</code> →
-<em>restarter</em> or <code>#f</code></p>
-<p>Searches <em>restarters</em> for a restarter whose tag is the same
-(in the sense of <code>symbol=?</code>) as <em>tag</em>. The
-<em>restarters</em> argument may be a single restarter, a list of
-restarters, or a <a
-href="https://srfi.schemers.org/srfi-222/srfi-222.html">SRFI 222</a>
-compound object. If no such restarter is found in <em>restarters</em>,
-the value of <code>(ambient-restarters)</code> is searched instead.
-Failing that as well, <code>#f</code> is returned.</p>
-<p><code>(collect-restarters </code><em>restarters</em><code>)</code></p>
-<p>The argument <em>restarters</em> has the same semantics as the
-<em>restarters</em> argument of <code>find-restarter</code>. All
-available restarters are collected into a list which is then returned,
-giving the restarters in <em>restarters</em> priority over the
-restarters in <code>(ambient-restarters)</code>, but excluding those
-whose tag is the same (in the sense of <code>symbol=?</code>) as a
-higher-priority restarter already on the list. Note that if
-<em>restarters</em> is a list, earlier elements in the list take
-priority over later ones, and the same is true for subobjects in a
-compound object.</p>
-<p><code>interactor</code></p>
-<p>A SRFI 39 / R7RS parameter whose value is an interactor procedure.
-The general contract of such a procedure is as follows:</p>
-<p>It accepts one argument, a list of restarters. The tags and the cars
-of the descriptions of the restarters are made available to the user.
-The user is then allowed to choose one of the tags.<br />
-Then the remaining strings in the description of the chosen restarter
-are made available to the user, and the user is allowed to specify a
-value corresponding to each string.</p>
-<p>The interactor then calls <code>restart</code> on the restarter and
-the user’s values and returns whatever <code>restart</code> returns.</p>
-<p>The sample interactor outputs the tags and description strings with
-<code>display</code> and reads the chosen tag and values using
-<code>read</code>. Here is a possible example of the interaction:</p>
-<pre><code>The following actions are available:
-return-zero: Return zero.
-return-numerator: Return the numerator.
-use-value: Choose a value to return.
-abort: Abort the computation.
+<p>A <dfn>restarter</dfn> is a condition object (see the R6RS standard
+libraries document, Section 7.2) of type <code>&amp;restarter</code>.
+It has four fields:</p>
 
-Which action do you choose:  use-value
-What is the value you wish to use? 32</code></pre>
-<p>In this case the restarter will return 32.</p>
-<p><code>(restart-interactively </code><em>restarters</em><code>)</code>
-→ <em>values</em> (may not return)</p>
-<p>Equivalent to
-<code>((interactor) (collect-restarters </code><em>restarters</em><code>))</code></p>
-<h3 id="standard-restart-tags">Standard restart tags</h3>
-<p>The following tags by convention hold to particular behaviour
-protocols:</p>
-<p><code>abort</code></p>
-<p>Completely aborts the computation, usually returning to some sort of
-initial user input such as a REPL. The invoker of an <code>abort</code>
-restarter accepts zero arguments, is typically an ambient restarter, and
-normally does not return.</p>
-<p><code>ignore</code></p>
-<p>Ignores the condition and proceeds. The invoker of an
-<code>ignore</code> restarter accepts zero arguments, is typically an
-ambient restarter, and normally returns an unspecified value.</p>
-<p><code>retry</code></p>
-<p>Simply retries a whole computation from a certain point, with no
-explicitly altered inputs. Some implicit environmental changes are
-expected to have taken place. The invoker of a <code>retry</code>
-restarter accepts zero arguments, may or may not be an ambient
-restarter, and normally returns an unspecified value.</p>
-<p><code>use-value</code></p>
-<p>Retries a computation with a given input value substituted for some
-invalid value in the original input. The invoker of a
-<code>use-value</code> restarter accepts at least one argument, the new
-value(s) to substitute. It is may or may not be an ambient restarter,
-and normally returns an unspecified value.</p>
-<p><code>store-value</code></p>
-<p>These restarter tag is in every respect like <code>use-value</code>
-restarters except that it is meant to store the input value somewhere,
-so that the old one is completely replaced, rather than just using the
-input value temporarily and possibly accidentally reusing the old value
-later and signaling another error.</p>
-<h2 id="additional-recommendations">Additional recommendations</h2>
-<p>It is highly recommended that Scheme systems integrate restarters
-into their condition systems and debuggers. This can be achieved by
-using SRFI 222 compound objects to represent conditions, with restarters
-as members to represent suitable recovery strategies among the
-subobjects.</p>
+<dl>
+  <dt>tag</dt>
+  <dd>A symbol describing this restarter.</dd>
+
+  <dt>description</dt>
+  <dd>A string that describes the method of
+  recovery and the values, if any, needed for recovery.</dd>
+
+  <dt>who</dt>
+  <dd>A string or symbol identifying the entity reporting the
+  exception that triggered the raising of the restarter
+  condition.</dd>
+
+  <dt>formals</dt>
+  <dd>A symbol, list, or improper formals list as described in Section
+  4.1.4 of the R7RS, describing the arguments expected by the
+  restarter’s <var>invoker</var>.</dd>
+
+  <dt>invoker</dt>
+  <dd>A procedure that actually performs the recovery. It must not
+  return. The number of arguments it expects is given by
+  <var>formals</var>.</dd>
+</dl>
+
+<p>Restarters are usually <dfn>ambient</dfn>; they are constructed
+on the fly and <dfn>established</dfn>: an exception handler is
+installed that makes all currently-established restarters available
+whenever a exception is raised.</p>
+
+<p>When a restarter is raised in response to an exception (called the
+<dfn>triggering exception</dfn> in this document), it should be a
+composite condition (see Section 7.2.1 of the R6RS) including the
+object raised by the triggering exception as one of its components.</p>
+
+<!-- Procedures section -->
+
+<h3 id="procedures">Procedures</h3>
+
+<p><code>(make-restarter</code> <var>tag</var> <var>description</var>
+<var>who</var> <var>invoker</var><code>)</code> →
+<span class="type-meta">restarter</span></p>
+
+<p>Returns a restarter with the specified fields. The arguments of
+<code>make-restarter</code> must conform to the above specification
+of restarter fields. In particular, the <var>invoker</var> procedure
+must not return to its caller.</p>
+
+<p><code>(restarter?</code> <var>obj</var><code>)</code> →
+<span class="type-meta">boolean</span></p>
+
+<p>Returns <code>#t</code> if <var>obj</var> is a restarter and
+<code>#f</code> otherwise.</p>
+
+<p><code>(restarter-tag</code> <var>restarter</var><code>)</code> →
+<span class="type-meta">symbol</span><br>
+
+<code>(restarter-description</code> <var>restarter</var><code>)</code> →
+<span class="type-meta">string</span><br>
+
+<code>(restarter-who</code> <var>restarter</var><code>)</code> →
+<span class="type-meta">symbol-or-string</span><br>
+
+<code>(restarter-formals</code> <var>restarter</var><code>)</code> →
+<span class="type-meta">pair-or-symbol</span></p>
+
+<p>Returns the tag / description / who / formals of <var>restarter</var>.
+The effect of mutating the values returned by these procedures is
+undefined.</p>
+
+<p><code>(restart</code> <var>restarter</var> <var>arg</var>
+…<code>)</code> → does not return</p>
+
+<p>Invokes the invoker procedure of <var>restarter</var> on the
+<var>args</var>.</p>
+
+<p>If <var>restarter</var>’s invoker returns, then
+the result is undefined.</p>
+
+<p><code>(with-abort-restarter</code> <var>thunk</var><code>)</code></p>
+
+<p>Establishes a restarter with tag <code>abort</code> for the dynamic
+extent of <var>thunk</var> (as determined by <code>dynamic-wind</code>).
+The <code>abort</code> restarter accepts zero arguments. When invoked,
+execution resumes with the continuation and dynamic environment of the
+<code>with-abort-restarter</code> form.</p>
+
+<!-- Interactors section -->
+
+<h4 id="interactors">Interactors</h4>
+
+<p>An <dfn>interactor</dfn> is a procedure of one argument, a list of
+restarters. The interactor presents the tags, formals, and
+descriptions of those restarters to the user, who then
+picks a tag and provides a list of expressions. Those expressions are
+then evaluated [TODO: in what environment?], and <code>restart</code>
+is applied to the chosen restarter and the user-provided values.</p>
+
+<p>If an interactor returns, a non-continuable exception [TODO: of what
+type?] is raised.</p>
+
+<p><code>(with-interactor</code> <var>interactor</var>
+<var>thunk</var><code>)</code></p>
+
+<p>Returns the results of invoking <var>thunk</var>. A new current
+exception handler is installed for the dynamic extent (as determined by
+<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If a
+restartable condition is raised in this extent, the handler invokes
+<var>interactor</var> on the list of available restarters provided by
+that condition.</p>
+
+<p><code>(with-current-interactor</code>
+<var>thunk</var><code>)</code></p>
+
+<p>Equivalent to</p>
+
+<pre class="example"><code>(with-interactor (current-interactor) <var>thunk</var>)</code></pre>
+
+<!-- Parameters section -->
+
+<h3 id="parameter-objects">Parameter objects</h3>
+
+<p><code>current-interactor</code></p>
+
+<p>A SRFI 39 / R7RS parameter object whose value is an interactor
+procedure.</p>
+
+<!-- Syntax section -->
+
+<h3 id="syntax">Syntax</h3>
+
+<p><code>(with-restarters</code> <var class="syn">restarter-clauses</var>
+<var class="syn">body</var><code>)</code></p>
+
+<p><code>(with-restarters</code> <var class="syn">who</var>
+<var class="syn">restarter-clauses</var>
+<var class="syn">body</var><code>)</code></p>
+
+<h5>Syntax:</h5>
+
+<p><var class="syn">restarter-clauses</var> takes one of two forms,
+either</p>
+
+<pre><code>(((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
+  <var class="syn">description</var>
+  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+
+<p>or</p>
+
+<pre><code>(</code><var class="syn">condition-var</var>
+ <code>((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
+  <var class="syn">description</var>
+  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+
+<p><var class="syn">who</var> should be an identifier or string.
+<var class="syn">condition-var</var> and <var class="syn">tag</var>
+tag are identifiers. <var class="syn">formals</var> is a formals list
+as specified in Section 4.1.4 of the R7RS.
+<var class="syn">description</var> is a string.</p>
+
+<h5>Semantics:</h5>
+
+<p>Installs a new exception handler for the dynamic extent (as
+determined by <code>dynamic-wind</code>) of the invocation of
+<var class="syn">body</var>. If an exception occurs, this handler
+constructs a restarter condition from the raised condition and from
+restarters constructed from the <var class="syn">restarter-clauses</var>,
+and raises it with <code>raise-continuable</code>. If
+<var class="syn">condition-var</var> is provided, then the condition
+object raised by the original triggering exception is bound to it in
+the environment of this handler.</p>
+
+<p>The who field of each restarter constructed from
+<var class="syn">restarter-clauses</var> is filled by
+<var class="syn">who</var>, or <code>#f</code> if
+<var class="syn">who</var> was omitted. Each invoker is constructed
+from the <var class="syn">expressions</var>; when it is invoked, the
+values of the final <var class="syn">expression</var> are delivered
+to the continuation of the <code>with-restarters</code> form.</p>
+
+<h4>Restartable procedure syntax</h4>
+
+<p>A <code>restartable</code> form wraps a procedure in code allowing
+the procedure to be re-invoked on new arguments if an assertion
+violation occurs. It takes one of the following forms:</p>
+
+<ul>
+  <li><p><code>(restartable define</code> <var class="syn">variable</var>
+  <var class="syn">expr</var><code>)</code></p></li>
+
+  <li><p><code>(restartable define (</code><var class="syn">variable</var>
+  <var class="syn">formals</var><code>)</code>
+  <var class="syn">expr</var><code>)</code></p>
+
+  <p><var class="syn">expr</var> must evaluate to a procedure. The
+  <code>restartable</code> form defines <var class="syn">variable</var>,
+  binding it to a new procedure. A restarter is established for the
+  dynamic extent of this procedure's invocation. If an assertion
+  violation (an exception raising a condition having type
+  <code>&assertion</code> (see R6RS §7.3)) occurs during invocation,
+  the restarter accepts new formals and re-invokes the procedure on
+  these arguments. The <code>who</code> and <code>formals</code> fields
+  of the restarter should contain <var class="syn">variable</var> and
+  <var class="syn">formals</var> (if provided) respectively.</p></li>
+
+  <li><p><code>(restartable</code> <var class="syn">who</var>
+  <var class="syn">expr</var><code>)</code></p></li>
+
+  <li><p><code>(restartable</code>
+  <var class="syn">expr</var><code>)</code></p>
+
+  <p>Evaluates to a procedure with the restartable-invocation
+  semantics described above. <var class="syn">who</var> gives the
+  <code>who</code> field for the restarter; it must be a symbol or
+  string</p></li>
+</ul>
+
+
+<!-- Implementation section -->
 
 <h2 id="implementation">Implementation</h2>
 <p>The implementation is available at
