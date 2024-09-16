@@ -281,6 +281,11 @@ restartable condition is raised in this extent, the handler invokes
 <var>interactor</var> on the list of available restarters provided by
 that condition.</p>
 
+<!--
+  An example here is important, since this is the main interface
+  to "unsupervised" restarts.
+ -->
+
 <p><code>(with-current-interactor</code>
 <var>thunk</var><code>)</code></p>
 
@@ -415,6 +420,9 @@ restart[0]&gt; <samp>(replace-arguments 3)</samp>
 <h2 id="implementation">Implementation</h2>
 <p>The implementation is available at
 <a href="https://github.com/scheme-requests-for-implementation/srfi-255">Github</a>.
+It is in portable R6RS Scheme, and should be easy to port to other
+Scheme implementations with similar exception and condition
+systems.</p>
 
 <h2 id="acknowledgements">Acknowledgements</h2>
 
