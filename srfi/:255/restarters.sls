@@ -200,7 +200,7 @@
        (define name
          (let ((proc (lambda formals body1 body2 ...)))
            (lambda formals
-             (with-restarters 'name
+             (with-restarters name
                               (((replace-arguments . formals)
                                 "Apply procedure to new arguments."
                                 (name . formals)))
