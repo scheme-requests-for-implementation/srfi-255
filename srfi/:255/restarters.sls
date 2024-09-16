@@ -104,7 +104,7 @@
 	            (let ((r (cdr p))
 		          (vals (map (lambda (e)
 		                       (eval e (environment
-				                '(interaction-environment))))
+				                '(rnrs))))
 				     (cdr choice))))
 		      (apply restart r vals))))
 	         (else (error 'default-interactor
