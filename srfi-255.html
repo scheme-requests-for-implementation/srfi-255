@@ -91,15 +91,12 @@ which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
 
-<p>Using the name “with-restarters” for a macro violates Scheme
-conventions.</p>
-
 <p>Should we provide <code>make-restarter</code>? Hand-crafted
 restarters aren’t guaranteed to honor the “no return” contract.</p>
 
-<p>Should <code>with-restarters</code> provide a way to
+<p>Should <code>restarter-guard</code> provide a way to
 control which kinds of conditions can be restarted? Currently,
-<code>with-restarters</code> is specified to restart any exception
+<code>restarter-guard</code> is specified to restart any exception
 that occurs.</p>
 
 <p>Should the evaluation environment of an interactor be specified?</p>
@@ -307,10 +304,10 @@ procedure.</p>
 
 <h3 id="syntax">Syntax</h3>
 
-<p><code>(with-restarters</code> <var class="syn">restarter-clauses</var>
+<p><code>(restarter-guard</code> <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
 
-<p><code>(with-restarters</code> <var class="syn">who</var>
+<p><code>(restarter-guard</code> <var class="syn">who</var>
 <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
 
@@ -354,7 +351,7 @@ the environment of this handler.</p>
 <var class="syn">who</var> was omitted. Each invoker is constructed
 from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
-to the continuation of the <code>with-restarters</code> form.</p>
+to the continuation of the <code>restarter-guard</code> form.</p>
 
 <!--
   TODO: More examples, specifically one using the condition
@@ -362,7 +359,7 @@ to the continuation of the <code>with-restarters</code> form.</p>
  -->
 
 <pre class="example"><code>(define (safe-/ a b)
-  (with-restarters safe-/
+  (restarter-guard safe-/
     (con ((return-value v)
 	  "Return a specific value."
 	  v)

@@ -29,7 +29,7 @@
           restarter-description
           restarter-invoker
           restartable
-          with-restarters
+          restarter-guard
           restartable
           with-interactor
           with-current-interactor
