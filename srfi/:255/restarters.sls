@@ -28,6 +28,7 @@
           restarter-formals
           restarter-description
           restarter-invoker
+          restart
           restartable
           with-restarters
           restartable
@@ -54,53 +55,86 @@
     (description restarter-description)
     (invoker restarter-invoker))
 
-  (define default-interactor
-    (let default-interactor ([n 0])
-      (lambda (restarters)
-        (call/cc
-         (lambda (abort)
-           (let f ()
-             (call/cc
-              (lambda (retry)
-                (display "Restartable exception occured.")
-                (newline)
-                (for-each
-                 (lambda (restarter)
-                   (write `(,(restarter-tag restarter) . ,(restarter-formals restarter)))
-                   (display ": ")
-                   (display (restarter-description restarter))
-                   (newline))
-                 restarters)
-                (let loop ()
-                  (display "restart [")
-                  (display n)
-                  (display "]> ")
-                  ;; TODO: Remove later duplicate tags.
-                  ;; TODO: Display the condition somewhere
-                  (let ([e (read)])
-                    (if (eof-object? e)
-                        (abort)             ;TODO: improve behaviour
-                        (call-with-values
-                            (lambda ()
-                              (apply
-                               (with-interactor
-                                   (default-interactor (+ n 1))
-                                 (lambda ()
-                                   (with-restarters
-                                       ([(retry)
-                                         "default-interactor: retry"
-                                         (retry)])
-                                     (eval `(lambda ,(map restarter-tag restarters)
-                                              ,e)
-                                           (environment '(rnrs))))))
-                               (map (lambda (restarter)
-                                      (lambda arg*
-                                        (apply (restarter-invoker restarter) arg*)))
-                                    restarters)))
-                          (lambda val*
-                            (for-each (lambda (val) (display val) (newline)) val*)
-                            (loop))))))))
-             (f)))))))
+  (define (restart restarter . args)
+    (assert (restarter? restarter))
+    (apply (restarter-invoker restarter) args))
+
+  ;;; Sample default interactor
+
+  ;;; This interactor maintains an interaction level which is
+  ;;; incremented each time a restartable exception occurs within
+  ;;; a restart.
+
+  ;; Returns an interactor whose interaction level is *level*.
+  (define (make-default-interactor level)
+    (lambda (restarters)
+      (call-with-current-continuation
+       (lambda (abort)
+         (let loop ()  ; main interaction loop
+           (call-with-current-continuation
+            (lambda (retry)
+	      (interact restarters level abort retry)))
+	   (loop))))))
+
+  (define default-interactor (make-default-interactor 0))
+
+  ;; Show the interactive user the available restarts, prompt for
+  ;; a selection "command-line" and try to run it.
+  (define (interact restarters level abort retry)
+    ;; Alist associating restarter tags with restarters.
+    (define restarters-by-tag
+      (map (lambda (r) `(,(restarter-tag r) . ,r))
+           restarters))
+
+    ;; Try to run the restarter selected by the user on the
+    ;; values of the provided arguments.
+    (define (invoke-selection choice)
+      (with-interactor
+       (make-default-interactor (+ level 1))
+       (lambda ()
+         (with-restarters default-interactor
+                          (interaction-con
+			   ((retry)
+			    "default-interactor: retry"
+			    (retry)))
+           (assert (pair? choice))
+	   ;; Lookup restarter by tag.
+	   (cond ((assv (car choice) restarters-by-tag) =>
+	          (lambda (p)
+	            (let ((r (cdr p))
+		          (vals (map (lambda (e)
+		                       (eval e (environment
+				                '(interaction-environment))))
+				     (cdr choice))))
+		      (apply restart r vals))))
+	         (else (error 'default-interactor
+	                      "invalid restarter choice"
+			      choice)))))))
+
+    (display "Restartable exception occurred.\n")
+    (show-restarters restarters)
+    (let loop ()  ; prompt loop
+      (display "restart [")
+      (display level)
+      (display "]> ")
+      (let ((choice (read)))
+        (when (eof-object? choice) (abort))  ; TODO: Improve behavior
+        (let-values ((vals (invoke-selection choice)))
+	  (unless (null? vals)
+	    (for-each (lambda (v)
+	                (display v)
+		        (newline))
+		      vals))
+	  (loop)))))
+
+  ;; Print a list of restarters.
+  (define (show-restarters restarters)
+    (for-each (lambda (r)
+                (write `(,(restarter-tag r) . ,(restarter-formals r)))
+		(display ": ")
+		(display (restarter-description r))
+		(newline))
+	      restarters))
 
   (define current-interactor
     (make-parameter default-interactor))
@@ -129,8 +163,8 @@
        (with-restarters #f (x ...) body ...))
       ((_ who ((x ...) ...) body ...)
        ; inject 'con' for the condition object.
-       (with-restarters who (con ((x ...) ...)) body ...))
-      ((_ who (con (((tag . arg*) description e1 e2 ...) ...))
+       (with-restarters who (con (x ...) ...) body ...))
+      ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
           body1 body2 ...)
        ((call-with-current-continuation  ; apply the returned value
          (lambda (k)
