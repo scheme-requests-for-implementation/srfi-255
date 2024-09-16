@@ -356,6 +356,34 @@ from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
 to the continuation of the <code>with-restarters</code> form.</p>
 
+<!--
+  TODO: More examples, specifically one using the condition
+  object in some useful way.
+ -->
+
+<pre class="example"><code>(define (safe-/ a b)
+  (with-restarters safe-/
+    (con ((return-value v)
+	  "Return a specific value."
+	  v)
+	 ((return-numerator)
+          "Return the numerator."
+	  a)
+	 ((return-zero)
+	  "Return zero."
+          0))
+    (/ a b)))
+
+> <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
+
+Restartable exception occurred.
+(return-value v) [safe-/]: Return a specific value.
+(return-numerator) [safe-/]: Return the numerator.
+(return-zero) [safe-/]: Return zero.
+restart[0]&gt; <samp>(return-numerator)</samp>
+
+  ⇒ 1</code></pre>
+
 <h4>Restartable procedure syntax</h4>
 
 <p>A <code>restartable</code> form wraps a procedure in code allowing
@@ -399,7 +427,7 @@ violation occurs. It takes one of the following forms:</p>
 > <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
 
 Restartable exception occurred.
-(replace-arguments x y): Apply the procedure to new arguments.
+(replace-arguments x y) [safe-/]: Apply the procedure to new arguments.
 restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
 
   ⇒ 2
@@ -410,7 +438,7 @@ restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
 	   '(1 2 0 4))))</samp>
 
 Restartable exception occurred.
-(replace-arguments . args): Apply the procedure to new arguments.
+(replace-arguments . args) [divider]: Apply the procedure to new arguments.
 restart[0]&gt; <samp>(replace-arguments 3)</samp>
 
   ⇒ (10 5 10/3 5/2)</code></pre>
