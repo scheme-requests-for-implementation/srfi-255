@@ -81,11 +81,18 @@ which may require extra input. Often, the decision of which method of
 recovery to choose is left up to a human user, who may be prompted for
 the input needed to recover. This SRFI proposes a mechanism
 called <dfn>restarters</dfn> which uses a new type of condition object
-to encapsulate the information necessary to restart a computation. We also
+and an associated exception handler to encapsulate the information
+necessary to restart a computation. We also
 describe the behavior and interface of <dfn>interactor</dfn> procedures,
 which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
+
+<p>Using the name “with-restarters” for a macro violates Scheme
+conventions.</p>
+
+<p>Should we provide <code>make-restarter</code>? Hand-crafted
+restarters aren’t guaranteed to honor the “no return” contract.</p>
 
 <p>Should <code>with-restarters</code> provide a way to
 control which kinds of conditions can be restarted? Currently,
@@ -96,7 +103,13 @@ that occurs.</p>
 
 <p>An effective and flexible system for gracefully handling and
 recovering from exceptional situations is a necessity for any large
-software system. …</p>
+software system. While the continuable exceptions and <code>guard</code>
+form described in the <cite>R6RS</cite> and <cite>R7RS</cite> reports
+provide a basic kind of recovery system, they do not make it
+convenient for a signaling process to offer a choice of recovery
+routes to the handler. This SRFI attempts to make up for this
+deficiency by extending the handler-condition system with the forms
+and mechanisms needed for convenient recovery.</p>
 
 <p>One important feature for a restart system to provide is
 interactivity. Though purely programmatic condition recovery is useful,
@@ -109,15 +122,25 @@ this SRFI, the interactivity is provided by an <dfn>interactor
 procedure</dfn> that by default is provided by the implementation, but
 can be overridden by the user.</p>
 
-<p>One major difference between the CL and Scheme condition systems is
-that when a CL handler exits to its caller, the next outer handler is
-invoked, whereas when a Scheme handler exits, either the code that
-raised the condition is resumed (if <code>raise-continuably</code> was
-used), or another error is signaled (if <code>raise</code> was used);
-the condition must be re-raised in order to give the next outer handler
-control. Therefore, in CL the only way for the signaler to regain
-control is through a restart, but in Scheme restarts are just one way of
-handling returns from exceptions.</p>
+<h3>SRFI 249</h3>
+
+<p>An earlier attempt at a restart system was made by the authors of
+<a href="https://srfi.schemers.org/srfi-249">SRFI 249</a>, on which
+the current SRFI was originally based. The SRFI 249 system is very
+simple--indeed, it is less a restart system than a
+“build-your-own-restart-system” kit, since it requires careful
+programming to create correct restarters with the low-level tools
+that SRFI 249 provides. In contrast, SRFI 255 provides a high-level
+interface that automatically handles the messy control details.
+(Restarters can still be constructed “by hand”, if need be.)</p>
+
+<p>Since the bulk of the SRFI 249 system
+also predates the exception systems of modern Scheme, it also
+duplicates the functionality of Scheme’s exception handlers by
+introducing a “restarter stack”. This stack, as a SRFI 39 / R7RS
+parameter object, is made part of the dynamic context of a Scheme
+program. Since we use the native exception system to install and
+manage restarters, there is no need for this complication.</p>
 
 <!-- Specification section -->
 
