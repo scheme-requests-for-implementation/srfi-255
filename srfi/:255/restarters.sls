@@ -149,10 +149,12 @@
             (when (restarter? c)
               (let ([c* (filter restarter? (simple-conditions c))])
                 (interactor c*)
-                (raise (condition (make-who-condition 'with-interactor)
-                                  (make-message-condition "interactor returned")
-                                  (make-irritants-condition (list interactor c*))
-                                  (make-non-continuable-violation)))))
+                (raise
+                 (condition
+                  (make-who-condition 'with-interactor)
+                  (make-message-condition "interactor returned")
+                  (make-irritants-condition (list interactor c*))
+                  (make-non-continuable-violation)))))
             (raise-continuable c))
         thunk)))
 
