@@ -31,6 +31,9 @@
       var.syn:after  { content: "\27E9"; }
 
       pre.example { margin-left: 2em; }
+
+      /* User input within an example. */
+      pre.example samp { font-style: italic }
       -->
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1"></head>
@@ -383,6 +386,19 @@ violation occurs. It takes one of the following forms:</p>
   string</p></li>
 </ul>
 
+<h5>Example:</h5>
+
+<pre class="example"><code>(restartable
+  define (safe-/ x y)
+    (/ x y))
+
+> <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
+
+Restartable exception occurred.
+(replace-arguments x y): Apply the procedure to new arguments.
+restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
+
+  ⇒ 2</pre></example>
 
 <!-- Implementation section -->
 
