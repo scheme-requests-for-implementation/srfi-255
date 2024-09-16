@@ -30,7 +30,7 @@
           restarter-invoker
           restart
           restartable
-          with-restarters
+          restarter-guard
           restartable
           with-interactor
           with-current-interactor
@@ -93,7 +93,7 @@
       (with-interactor
        (make-default-interactor (+ level 1))
        (lambda ()
-         (with-restarters default-interactor
+         (restarter-guard default-interactor
                           (interaction-con
 			   ((retry)
 			    "default-interactor: retry"
@@ -162,13 +162,13 @@
     (lambda (thunk)
       (with-interactor (current-interactor) thunk)))
 
-  (define-syntax with-restarters
+  (define-syntax restarter-guard
     (syntax-rules ()
       ((_ (x ...) body ...)
-       (with-restarters #f (x ...) body ...))
+       (restarter-guard #f (x ...) body ...))
       ((_ who ((x ...) ...) body ...)
        ; inject 'con' for the condition object.
-       (with-restarters who (con (x ...) ...) body ...))
+       (restarter-guard who (con (x ...) ...) body ...))
       ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
           body1 body2 ...)
        ((call-with-current-continuation  ; apply the returned value
@@ -188,7 +188,7 @@
                 (lambda vals
                   (k (lambda () (apply values vals)))))))))))))
 
-  ;; Helper for with-restarters.
+  ;; Helper for restarter-guard.
   (define-syntax build-restarter
     (syntax-rules ()
       ((_ k tag desc arg* who e1 e2 ...)
@@ -209,7 +209,7 @@
        (define name
          (let ((proc (lambda formals body1 body2 ...)))
            (lambda formals
-             (with-restarters name
+             (restarter-guard name
                               (((replace-arguments . formals)
                                 "Apply procedure to new arguments."
                                 (name . formals)))
@@ -226,7 +226,7 @@
                     'expr)))
          (restartable-proc
           (lambda args
-            (with-restarters who
+            (restarter-guard who
                              (((replace-arguments . args)
                                "Apply procedure to new arguments."
                                (apply restartable-proc args)))
@@ -237,7 +237,7 @@
     (lambda (thunk)
       (call/cc
        (lambda (abort)
-         (with-restarters
+         (restarter-guard
              ([(abort)
                "abort"
                (abort)])
