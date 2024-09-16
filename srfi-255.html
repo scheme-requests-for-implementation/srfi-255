@@ -379,16 +379,13 @@ violation occurs. It takes one of the following forms:</p>
   <li><p><code>(restartable</code> <var class="syn">who</var>
   <var class="syn">expr</var><code>)</code></p></li>
 
-  <li><p><code>(restartable</code>
-  <var class="syn">expr</var><code>)</code></p>
-
   <p>Evaluates to a procedure with the restartable-invocation
   semantics described above. <var class="syn">who</var> gives the
   <code>who</code> field for the restarter; it must be a symbol or
   string</p></li>
 </ul>
 
-<h5>Example:</h5>
+<h5>Examples:</h5>
 
 <pre class="example"><code>(restartable
   define (safe-/ x y)
@@ -400,7 +397,18 @@ Restartable exception occurred.
 (replace-arguments x y): Apply the procedure to new arguments.
 restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
 
-  ⇒ 2</pre></example>
+  ⇒ 2
+
+> <samp>(with-current-interactor
+    (lambda ()
+      (map (restartable "divider" (lambda (x) (/ 10 x)))
+	   '(1 2 0 4))))</samp>
+
+Restartable exception occurred.
+(replace-arguments . args): Apply the procedure to new arguments.
+restart[0]&gt; <samp>(replace-arguments 3)</samp>
+
+  ⇒ (10 5 10/3 5/2)</code></pre>
 
 <!-- Implementation section -->
 
