@@ -51,8 +51,9 @@
   (define-condition-type &restarter &condition
     make-restarter restarter?
     (tag restarter-tag)
-    (formals restarter-formals)
     (description restarter-description)
+    (formals restarter-formals)
+    (who restarter-who)
     (invoker restarter-invoker))
 
   (define (restart restarter . args)
@@ -131,7 +132,9 @@
   (define (show-restarters restarters)
     (for-each (lambda (r)
                 (write `(,(restarter-tag r) . ,(restarter-formals r)))
-		(display ": ")
+		(display " [")
+		(display (restarter-who r))
+		(display "]: ")
 		(display (restarter-description r))
 		(newline))
 	      restarters))
@@ -174,7 +177,7 @@
                    (raise-continuable
                     (condition
                      con
-                     (build-restarter k tag arg* description e1 e2 ...)
+                     (build-restarter k tag description arg* who e1 e2 ...)
                      ...))
                    (raise-continuable con)))
              (lambda ()
@@ -186,9 +189,13 @@
   ;; Helper for with-restarters.
   (define-syntax build-restarter
     (syntax-rules ()
-      ((_ k t a* d e1 e2 ...)
-       (make-restarter 't 'a* d (lambda a*
-                                  (k (lambda () e1 e2 ...)))))))
+      ((_ k tag desc arg* who e1 e2 ...)
+       (make-restarter 'tag
+                       desc
+		       'arg*
+		       'who
+		       (lambda arg*
+                         (k (lambda () e1 e2 ...)))))))
 
   (define-syntax restartable
     (syntax-rules (define lambda)
