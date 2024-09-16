@@ -405,7 +405,7 @@ violation occurs. It takes one of the following forms:</p>
   <code>&assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
   the restarter accepts new formals and re-invokes the procedure on
   these arguments. The <code>who</code> and <code>formals</code> fields
-  of the restarter should contain <var class="syn">variable</var> and
+  of the restarter are filled by <var class="syn">variable</var> and
   <var class="syn">formals</var> (if provided) respectively.</p></li>
 
   <li><p><code>(restartable</code> <var class="syn">who</var>
@@ -413,7 +413,7 @@ violation occurs. It takes one of the following forms:</p>
 
   <p>Evaluates to a procedure with the restartable-invocation
   semantics described above. <var class="syn">who</var> gives the
-  <code>who</code> field for the restarter; it must be a symbol or
+  <code>who</code> field for the restarter; it must be an identifier or
   string</p></li>
 </ul>
 
