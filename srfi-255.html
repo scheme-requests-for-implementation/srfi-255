@@ -119,6 +119,8 @@ control. Therefore, in CL the only way for the signaler to regain
 control is through a restart, but in Scheme restarts are just one way of
 handling returns from exceptions.</p>
 
+<!-- Specification section -->
+
 <h2 id="specification">Specification</h2>
 
 <p>A <dfn>restarter</dfn> is a condition object (see the R6RS standard
@@ -219,7 +221,8 @@ execution resumes with the continuation and dynamic environment of the
 restarters. The interactor presents the tags, formals, and
 descriptions of those restarters to the user, who then
 picks a tag and provides a list of expressions. Those expressions are
-then evaluated [TODO: in what environment?], and <code>restart</code>
+then evaluated in the value of <code>(interaction-environment)</code>,
+and <code>restart</code>
 is applied to the chosen restarter and the user-provided values.</p>
 
 <p>If an interactor returns, a non-continuable exception [TODO: of what
