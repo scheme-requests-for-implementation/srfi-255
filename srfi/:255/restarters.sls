@@ -205,15 +205,24 @@
        (syntax-violation 'restartable
                          "invalid syntax"
                          (define ((x) . rest))))
-      ((_ define (name . formals) body1 body2 ...)
+      ((_ define (name arg ...) body1 body2 ...)
        (define name
-         (let ((proc (lambda formals body1 body2 ...)))
-           (lambda formals
+         (let ((proc (lambda (arg ...) body1 body2 ...)))
+           (lambda (arg ...)
              (restarter-guard name
-                              (((use-arguments . formals)
+                              (((use-arguments arg ...)
                                 "Apply procedure to new arguments."
-                                (name . formals)))
-               (proc . formals))))))
+                                (name arg ...)))
+               (proc arg ...))))))
+      ((_ define (name . args) body1 body2 ...)
+       (define name
+         (let ((proc (lambda args body1 body2 ...)))
+           (lambda args
+             (restarter-guard name
+                              (((use-arguments . args)
+                                "Apply procedure to new arguments."
+                                (apply name args)))
+               (apply proc args))))))
       ((_ define name expr)
        (define name (restartable name expr)))
       ((_ who expr)
