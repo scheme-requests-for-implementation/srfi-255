@@ -64,6 +64,8 @@
       <li><a href="#procedures">Procedures</a></li>
       <li><a href="#parameter-objects">Parameter objects</a></li>
       <li><a href="#syntax">Syntax</a></li>
+      <li><a href="#standard-restart-tags">Proposed standard restart
+      tags</a></li>
     </ol>
   </li>
   <li><a href="#implementation">Implementation</a></li>
@@ -442,6 +444,35 @@ Restartable exception occurred.
 restart[0]&gt; <samp>(replace-arguments 3)</samp>
 
   ⇒ (10 5 10/3 5/2)</code></pre>
+
+<!-- Standard restart tags section -->
+
+<h3 id="standard-restart-tags">Proposed standard restart tags</h3>
+
+<p>Users of SRFI 255 are encouraged to use the following tag protocol
+when naming their restarters.</p>
+
+<dl>
+  <dt class="tag-name">abort</dt>
+  <dd>Completely aborts the computation. The invoker of an
+  <code>abort</code> restarter accepts zero arguments.</p>
+
+  <dt class="tag-name">ignore</dt>
+  <dd>Ignores the condition and proceeds. The invoker of an
+  <code>ignore</code> restarter accepts zero arguments.</dd>
+
+  <dt class="tag-name">retry</dt>
+  <dd>Simply retries a whole computation from a certain point, with no
+  explicitly altered inputs. Some implicit environmental changes are
+  expected to have taken place. The invoker of a <code>retry</code>
+  restarter accepts zero arguments.</dd>
+
+  <dt class="tag-name">use-arguments</dt>
+  <dd>Retries the invocation of some procedure, using new arguments.
+  The invoker of a <code>use-arguments</code> restarter accepts zero
+  or more arguments. This is the tag protocol used by
+  <code>restartable</code>.</dd>
+</dl>
 
 <!-- Implementation section -->
 
