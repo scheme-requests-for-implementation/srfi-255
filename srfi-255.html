@@ -116,16 +116,15 @@ routes to the handler. This SRFI attempts to make up for this
 deficiency by extending the handler-condition system with the forms
 and mechanisms needed for convenient recovery.</p>
 
-<p>One important feature for a restart system to provide is
-interactivity. Though purely programmatic condition recovery is useful,
-it is well-acknowledged by the designers and users of Common Lisp’s
-condition system that the ability to <em>interactively</em> choose a
-method of recovery for a condition is useful.  This ability, built-in to the Common
-Lisp language, is one of the primary reasons for the power of Common
-Lisp development and debugging environments. In
-this SRFI, the interactivity is provided by an <dfn>interactor
-procedure</dfn> that by default is provided by the implementation, but
-can be overridden by the user.</p>
+<p>One important feature for a restart system to provide is interactivity.
+Though purely programmatic condition recovery is useful, it is
+well-acknowledged by the designers and users of Common Lisp’s condition
+system that the ability to <em>interactively</em> choose a method of
+recovery for a condition is useful.  This ability, built-in to the Common
+Lisp language, is one of the primary reasons for the power of Common Lisp
+development and debugging environments. In this SRFI, the interactivity
+is provided by an <dfn>interactor procedure</dfn> that by default is
+provided by the implementation, but can be overridden by the user.</p>
 
 <h3>SRFI 249</h3>
 
