@@ -1,3 +1,6 @@
+;;; SPDX-FileCopyrightText: 2024 Wolfgang Corcoran-Mathe, Marc Nieper-Wißkirchen
+;;; SPDX-License-Identifier: MIT
+
 (import (rnrs)
         (srfi :64)
         (srfi :255))

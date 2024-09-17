@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# SPDX-FileCopyrightText: 2024 Wolfgang Corcoran-Mathe, Marc Nieper-Wißkirchen
+# SPDX-License-Identifier: MIT
+
 usage () {
         printf 'Usage: %s chez\n' "$(basename $0)" 1>&2
         exit 1
