@@ -399,7 +399,8 @@ violation occurs. It takes one of the following forms:</p>
 
   <p><var class="syn">expr</var> must evaluate to a procedure. The
   <code>restartable</code> form defines <var class="syn">variable</var>,
-  binding it to a new procedure. A restarter is established for the
+  binding it to a new procedure. A restarter with tag
+  <code>use-arguments</code> is established for the
   dynamic extent of this procedure's invocation. If an assertion
   violation (an exception raising a condition having type
   <code>&assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
@@ -426,7 +427,7 @@ violation occurs. It takes one of the following forms:</p>
 > <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
 
 Restartable exception occurred.
-(replace-arguments x y) [safe-/]: Apply the procedure to new arguments.
+(use-arguments x y) [safe-/]: Apply the procedure to new arguments.
 restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
 
   ⇒ 2

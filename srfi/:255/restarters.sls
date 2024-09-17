@@ -210,7 +210,7 @@
          (let ((proc (lambda formals body1 body2 ...)))
            (lambda formals
              (restarter-guard name
-                              (((replace-arguments . formals)
+                              (((use-arguments . formals)
                                 "Apply procedure to new arguments."
                                 (name . formals)))
                (proc . formals))))))
@@ -227,7 +227,7 @@
          (restartable-proc
           (lambda args
             (restarter-guard who
-                             (((replace-arguments . args)
+                             (((use-arguments . args)
                                "Apply procedure to new arguments."
                                (apply restartable-proc args)))
               (apply proc args)))))
