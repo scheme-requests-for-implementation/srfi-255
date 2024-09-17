@@ -412,7 +412,7 @@ violation occurs. It takes one of the following forms:</p>
   <var class="syn">formals</var> (if provided) respectively.</p></li>
 
   <li><p><code>(restartable</code> <var class="syn">who</var>
-  <var class="syn">expr</var><code>)</code></p></li>
+  <var class="syn">expr</var><code>)</code></p>
 
   <p>Evaluates to a procedure with the restartable-invocation
   semantics described above. <var class="syn">who</var> gives the
@@ -455,7 +455,7 @@ when naming their restarters.</p>
 <dl>
   <dt class="tag-name">abort</dt>
   <dd>Completely aborts the computation. The invoker of an
-  <code>abort</code> restarter accepts zero arguments.</p>
+  <code>abort</code> restarter accepts zero arguments.</dd>
 
   <dt class="tag-name">ignore</dt>
   <dd>Ignores the condition and proceeds. The invoker of an
