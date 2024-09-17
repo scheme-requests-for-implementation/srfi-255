@@ -200,7 +200,7 @@
                          (k (lambda () e1 e2 ...)))))))
 
   (define-syntax restartable
-    (syntax-rules (define lambda)
+    (syntax-rules (define)
       ((_ define ((x) . rest) _ ...)
        (syntax-violation 'restartable
                          "invalid syntax"
