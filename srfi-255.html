@@ -397,11 +397,15 @@ violation occurs. It takes one of the following forms:</p>
 
 <ul>
   <li><p><code>(restartable define</code> <var class="syn">variable</var>
-  <var class="syn">body</var><code>)</code></p></li>
+  <var class="syn">expr</var><code>)</code></p></li>
 
   <li><p><code>(restartable define (</code><var class="syn">variable</var>
   <var class="syn">formals</var><code>)</code>
-  <var class="syn">expr</var><code>)</code></p>
+  <var class="syn">body</var><code>)</code></p>
+
+  <li><p><code>(restartable define (</code><var class="syn">variable</var>
+  <code>.</code> <var class="syn">formal</var><code>)</code>
+  <var class="syn">body</var><code>)</code></p>
 
   <p><var class="syn">expr</var> must evaluate to a procedure. The
   <code>restartable</code> form defines <var class="syn">variable</var>,
@@ -413,12 +417,14 @@ violation occurs. It takes one of the following forms:</p>
   the restarter accepts new formals and re-invokes the procedure on
   these arguments. The <code>who</code> and <code>formals</code> fields
   of the restarter are filled by <var class="syn">variable</var> and
-  <var class="syn">formals</var> (if provided), respectively.</p></li>
+  <var class="syn">formals</var> / <var class="syn">formal</var>
+  (if provided), respectively.</p></li>
 
   <li><p><code>(restartable</code> <var class="syn">who</var>
   <var class="syn">expr</var><code>)</code></p>
 
-  <p>Evaluates to a procedure with the restartable-invocation
+  <p><var class="syn">expr</var> must evaluate to a procedure.
+  Evaluates to a procedure with the restartable-invocation
   semantics described above. <var class="syn">who</var> gives the
   <code>who</code> field for the restarter; it must be an identifier or
   string.</p></li>
