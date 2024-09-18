@@ -122,9 +122,9 @@ and mechanisms needed for convenient recovery.</p>
 
 <p>One important feature for a restart system to provide is interactivity.
 Though purely programmatic condition recovery is useful, it is
-well-acknowledged by the designers and users of Common Lisp’s condition
+well acknowledged by the designers and users of Common Lisp’s condition
 system that the ability to <em>interactively</em> choose a method of
-recovery for a condition is useful.  This ability, built-in to the Common
+recovery for a condition is useful.  This ability, built into the Common
 Lisp language, is one of the primary reasons for the power of Common Lisp
 development and debugging environments. In this SRFI, the interactivity
 is provided by an <dfn>interactor procedure</dfn> that by default is
@@ -188,7 +188,7 @@ It has five fields:</p>
 
   <dt>formals</dt>
   <dd>A symbol, list, or improper formals list as described in Section
-  4.1.4 of the <cite>R7RS</cite>, describing the arguments expected by the
+  4.1.4 of <cite>R7RS Small</cite>, describing the arguments expected by the
   restarter’s <var>invoker</var>.</dd>
 
   <dt>invoker</dt>
@@ -199,8 +199,8 @@ It has five fields:</p>
 
 <p>Restarters are usually constructed
 on the fly and <dfn>established</dfn>: an exception handler is
-installed that makes all currently-established restarters available
-whenever a exception is raised.</p>
+installed that makes all currently established restarters available
+whenever an exception is raised.</p>
 
 <p>When a restarter is raised in response to an exception (called the
 <dfn>triggering exception</dfn> in this document), it should be a
@@ -397,7 +397,7 @@ violation occurs. It takes one of the following forms:</p>
 
 <ul>
   <li><p><code>(restartable define</code> <var class="syn">variable</var>
-  <var class="syn">expr</var><code>)</code></p></li>
+  <var class="syn">body</var><code>)</code></p></li>
 
   <li><p><code>(restartable define (</code><var class="syn">variable</var>
   <var class="syn">formals</var><code>)</code>
@@ -413,7 +413,7 @@ violation occurs. It takes one of the following forms:</p>
   the restarter accepts new formals and re-invokes the procedure on
   these arguments. The <code>who</code> and <code>formals</code> fields
   of the restarter are filled by <var class="syn">variable</var> and
-  <var class="syn">formals</var> (if provided) respectively.</p></li>
+  <var class="syn">formals</var> (if provided), respectively.</p></li>
 
   <li><p><code>(restartable</code> <var class="syn">who</var>
   <var class="syn">expr</var><code>)</code></p>
@@ -509,7 +509,7 @@ work on so much else in Scheme.</p>
 
 <p>Alex Shinn, John Cowan, &amp; Arthur A. Gleckler, eds.,
 <cite>Revised<sup>7</sup> Report on the Algorithmic Language Scheme</cite>
-(R7RS) (2013). Available <a href="https://small.r7rs.org/">on the
+(R7RS Small) (2013). Available <a href="https://small.r7rs.org/">on the
 Web</a>.</p>
 
 <p>Michael Sperber, R. Kent Dybvig, Matthew Flatt, &amp; Anton van
