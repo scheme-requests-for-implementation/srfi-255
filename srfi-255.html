@@ -224,17 +224,28 @@ must not return to its caller.</p>
 
 <pre class="example"><code>(define (safe-/ x y)
   (call/cc
-   (lambda (abort-with-value)
-     (with-exception-handler
-      (lambda (con)
-        (raise-continuable
-         (condition con
-                    (make-restarter 'return-value
-                                    "Return x."
-                                    'foo
-                                    '(x)
-                                    abort-with-value))))
-      (lambda () (/ x y))))))</code></pre>
+   (lambda (return-value)
+     (let ((val-restarter
+            (make-restarter 'return-value
+                            "Return x."
+                            'safe-/
+                            '(x)
+                            return-value)))
+       (with-exception-handler
+        (lambda (con)
+          (raise-continuable
+           (if (condition? con)
+               (condition con val-restarter)
+               con)))
+        (lambda () (/ x y)))))))
+
+> <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
+
+Restartable exception occurred.
+(return-value x) [safe-/]: Return x.
+restart[0]&gt; <samp>(return-value 4)</samp>
+
+  ⇒ 4</code></pre>
 
 <p><code>(restarter?</code> <var>obj</var><code>)</code> →
 <span class="type-meta">boolean</span></p>
