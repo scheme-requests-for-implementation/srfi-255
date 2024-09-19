@@ -456,7 +456,7 @@ violation occurs. It takes one of the following forms:</p>
 
 Restartable exception occurred.
 (use-arguments x y) [safe-/]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
+restart[0]&gt; <samp>(use-arguments 4 2)</samp>
 
   ⇒ 2
 
@@ -466,8 +466,8 @@ restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
 	   '(1 2 0 4))))</samp>
 
 Restartable exception occurred.
-(replace-arguments . args) [divider]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(replace-arguments 3)</samp>
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+restart[0]&gt; <samp>(use-arguments 3)</samp>
 
   ⇒ (10 5 10/3 5/2)</code></pre>
 
