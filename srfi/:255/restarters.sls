@@ -55,8 +55,8 @@
     make-restarter restarter?
     (tag restarter-tag)
     (description restarter-description)
-    (formals restarter-formals)
     (who restarter-who)
+    (formals restarter-formals)
     (invoker restarter-invoker))
 
   (define (restart restarter . args)
@@ -197,8 +197,8 @@
       ((_ k tag desc arg* who e1 e2 ...)
        (make-restarter 'tag
                        desc
+                       'who
 		       'arg*
-		       'who
 		       (lambda arg*
                          (k (lambda () e1 e2 ...)))))))
 
