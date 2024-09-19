@@ -220,6 +220,22 @@ object raised by the triggering exception as one of its components.</p>
 of restarter fields. In particular, the <var>invoker</var> procedure
 must not return to its caller.</p>
 
+<h5>Example:</h5>
+
+<pre class="example"><code>(define (safe-/ x y)
+  (call/cc
+   (lambda (abort-with-value)
+     (with-exception-handler
+      (lambda (con)
+        (raise-continuable
+         (condition con
+                    (make-restarter 'return-value
+                                    "Return x."
+                                    'foo
+                                    '(x)
+                                    abort-with-value))))
+      (lambda () (/ x y))))))</code></pre>
+
 <p><code>(restarter?</code> <var>obj</var><code>)</code> →
 <span class="type-meta">boolean</span></p>
 
