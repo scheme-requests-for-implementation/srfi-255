@@ -416,26 +416,65 @@ restart[0]&gt; <samp>(return-numerator)</samp>
 
   ⇒ 1</code></pre>
 
-<h4>Restartable procedure syntax</h4>
+<!-- restartable form -->
 
-<p>A <code>restartable</code> form wraps a procedure in code allowing
-the procedure to be re-invoked on new arguments if an assertion
-violation occurs. It takes one of the following forms:</p>
+<h4>Restartable procedures</h4>
+
+<p>The <code>restartable</code>
+form wraps a procedure in code allowing
+it to be re-invoked on new arguments if an assertion
+violation occurs.</p>
+
+<p><code>(restartable</code> <var class="syn">who</var>
+<var class="syn">expr</var><code>)</code></p>
+
+<h5>Syntax:</h5>
+
+<p><var class="syn">who</var> must be a symbol or string.</p>
+
+<h5>Semantics:</h5>
+
+<p><var class="syn">expr</var> must evaluate to a procedure. The
+<code>restartable</code> form establishes a restarter with tag
+<code>use-arguments</code> for the
+dynamic extent of this procedure’s invocation. If an assertion
+violation (an exception raising a condition having type
+<code>&amp;assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
+the restarter accepts new formals and re-invokes the procedure on
+these arguments. The <code>who</code> field
+of the restarter is filled by <var class="syn">who</var>.</p>
+
+<h5>Examples:</h5>
+
+<pre class="example"><code>&gt;</code> <samp>(with-current-interactor
+    (lambda ()
+      (map (restartable "divider" (lambda (x) (/ 10 x)))
+	   '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
+
+  <code>⇒ (10 5 10/3 5/2)</code></pre>
+
+<!-- define-restartable form -->
+
+<h4>Restartable procedure definitions</h4>
+
+<p>A restartable procedure definition takes one of the following
+forms:</p>
 
 <ul>
-  <li><p><code>(restartable define</code> <var class="syn">variable</var>
-  <var class="syn">expr</var><code>)</code></p></li>
-
-  <li><p><code>(restartable define (</code><var class="syn">variable</var>
+  <li><p><code>(define-restartable (</code><var class="syn">variable</var>
   <var class="syn">formals</var><code>)</code>
   <var class="syn">body</var><code>)</code></p>
 
-  <li><p><code>(restartable define (</code><var class="syn">variable</var>
+  <li><p><code>(define-restartable (</code><var class="syn">variable</var>
   <code>.</code> <var class="syn">formal</var><code>)</code>
   <var class="syn">body</var><code>)</code></p>
 
-  <p><var class="syn">expr</var> must evaluate to a procedure. The
-  <code>restartable</code> form defines <var class="syn">variable</var>,
+  <p>The
+  <code>define-restartable</code> form defines <var class="syn">variable</var>,
   binding it to a new procedure. A restarter with tag
   <code>use-arguments</code> is established for the
   dynamic extent of this procedure's invocation. If an assertion
@@ -447,40 +486,29 @@ violation occurs. It takes one of the following forms:</p>
   <var class="syn">formals</var> / <var class="syn">formal</var>
   (if provided), respectively.</p></li>
 
-  <li><p><code>(restartable</code> <var class="syn">who</var>
-  <var class="syn">expr</var><code>)</code></p>
+  <li><p><code>(define-restartable</code> <var class="syn">variable</var>
+    <var class="syn">expr</var><code>)</code></p>
 
-  <p><var class="syn">expr</var> must evaluate to a procedure.
-  Evaluates to a procedure with the restartable-invocation
-  semantics described above. <var class="syn">who</var> gives the
-  <code>who</code> field for the restarter; it must be an identifier or
-  string.</p></li>
+    <p>Shorthand for</p>
+
+    <pre class="example"><code>(define</code> <var class="syn">variable</var>
+  <code>(restartable</code> <var class="syn">variable</var>
+    <var class="syn">expr</var><code>)</code></pre>
+  </li>
 </ul>
 
-<h5>Examples:</h5>
+<h5>Example:</h5>
 
-<pre class="example"><code>(restartable
-  define (safe-/ x y)
-    (/ x y))
+<pre class="example"><code>(define-restartable (safe-/ x y)
+  (/ x y))
 
-> <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
+&gt;</code> <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
 
-Restartable exception occurred.
+<code>Restartable exception occurred.
 (use-arguments x y) [safe-/]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(use-arguments 4 2)</samp>
+restart[0]&gt;</code> <samp>(use-arguments 4 2)</samp>
 
-  ⇒ 2
-
-> <samp>(with-current-interactor
-    (lambda ()
-      (map (restartable "divider" (lambda (x) (/ 10 x)))
-	   '(1 2 0 4))))</samp>
-
-Restartable exception occurred.
-(use-arguments . args) [divider]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(use-arguments 3)</samp>
-
-  ⇒ (10 5 10/3 5/2)</code></pre>
+  <code>⇒ 2</code></pre>
 
 <!-- Standard restart tags section -->
 
