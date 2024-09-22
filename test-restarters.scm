@@ -19,6 +19,51 @@
 ;;; Tests
 
 (test-begin "Restarters")
+(test-assert "restarter objects 1"
+ (call-with-current-continuation
+  (lambda (k)
+    (with-interactor
+     (lambda (rs) (restart/tag 'use-value rs #t))
+     (lambda ()
+       (raise-continuable
+        (make-restarter 'use-value "Return x." 'foo '(x) k)))))))
+
+(test-assert "restarter objects 2"
+ (call-with-current-continuation
+  (lambda (k)
+    (with-interactor
+     (lambda (rs) (restart/tag 'use-not-value rs #f))
+     (lambda ()
+       (raise-continuable
+        (make-restarter 'use-not-value
+                        "Return (not x)."
+                        'foo
+                        '(x)
+                        (lambda (x) (k (not x))))))))))
+
+(test-equal "restarter objects 3"
+ '(dump-restarter-data "Return restarter info as a list." () foo)
+ (call-with-current-continuation
+  (lambda (k)
+    (with-interactor
+     (lambda (rs)
+       (restart/tag 'dump-restarter-data rs))
+     (lambda ()
+       (letrec*
+        ((dump
+          (lambda ()
+            (k (list (restarter-tag r)
+                     (restarter-description r)
+                     (restarter-formals r)
+                     (restarter-who r)))))
+         (r (make-restarter 'dump-restarter-data
+                            "Return restarter info as a list."
+                            'foo
+                            '()
+                            dump)))
+
+         (raise-continuable r)))))))
+
 (test-assert "restarter-guard 1"
  (with-interactor
   (lambda (rs) (restart/tag 'return-true rs))
