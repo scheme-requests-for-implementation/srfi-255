@@ -36,9 +36,6 @@
           restartable
           restarter-guard
           restartable
-          with-interactor
-          with-current-interactor
-          current-interactor
           default-interactor
           with-abort-restarter)
 
@@ -72,16 +69,25 @@
   ;;; incremented each time a restartable exception occurs within
   ;;; a restart.
 
+  ;; Return a list of the restarters composing condition *con*.
+  (define (condition-restarters con)
+    (filter restarter? (simple-conditions con)))
+
   ;; Returns an interactor whose interaction level is *level*.
   (define (make-default-interactor level)
-    (lambda (restarters)
-      (call-with-current-continuation
-       (lambda (abort)
-         (let loop ()  ; main interaction loop
-           (call-with-current-continuation
-            (lambda (retry)
-	      (interact restarters level abort retry)))
-	   (loop))))))
+    (lambda (obj)
+      (if (restarter? obj)
+          (let ((restarters (condition-restarters obj)))
+            (call-with-current-continuation
+              (lambda (abort)
+                (let loop ()  ; main interaction loop
+                  (call-with-current-continuation
+                   (lambda (retry)
+	             (interact restarters level abort retry)))
+	             (loop)))))
+	  (if (non-continuable-violation? obj)
+	      (raise obj)
+	      (raise-continuable obj)))))
 
   (define default-interactor (make-default-interactor 0))
 
@@ -96,7 +102,7 @@
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
     (define (invoke-selection choice)
-      (with-interactor
+      (with-exception-handler
        (make-default-interactor (+ level 1))
        (lambda ()
          (restarter-guard default-interactor
@@ -144,29 +150,6 @@
 		(display (restarter-description r))
 		(newline))
 	      restarters))
-
-  (define current-interactor
-    (make-parameter default-interactor))
-
-  (define with-interactor
-    (lambda (interactor thunk)
-      (with-exception-handler
-          (lambda (c)
-            (when (restarter? c)
-              (let ([c* (filter restarter? (simple-conditions c))])
-                (interactor c*)
-                (raise
-                 (condition
-                  (make-who-condition 'with-interactor)
-                  (make-message-condition "interactor returned")
-                  (make-irritants-condition (list interactor c*))
-                  (make-non-continuable-violation)))))
-            (raise-continuable c))
-        thunk)))
-
-  (define with-current-interactor
-    (lambda (thunk)
-      (with-interactor (current-interactor) thunk)))
 
   (define-syntax restarter-guard
     (lambda (syn)

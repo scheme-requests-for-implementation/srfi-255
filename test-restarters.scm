@@ -6,10 +6,12 @@
         (srfi :255))
 
 ;; Invoke the restarter with tag *tag* on the args, if
-;; such a restarter is found.
-(define (restart/tag tag restarters . args)
-  (let ((r (find (lambda (r) (eqv? tag (restarter-tag r)))
-                 restarters)))
+;; such a restarter is a component of *con*.
+(define (restart/tag tag con . args)
+  (let ((r (find (lambda (c)
+                   (and (restarter? c)
+                        (eqv? tag (restarter-tag c))))
+                 (simple-conditions con))))
     (if r
         (apply restart r args)
         (error 'restart/tag
@@ -22,8 +24,8 @@
 (test-assert "restarter objects 1"
  (call-with-current-continuation
   (lambda (k)
-    (with-interactor
-     (lambda (rs) (restart/tag 'use-value rs #t))
+    (with-exception-handler
+     (lambda (con) (restart/tag 'use-value con #t))
      (lambda ()
        (raise-continuable
         (make-restarter 'use-value "Return x." 'foo '(x) k)))))))
@@ -31,8 +33,8 @@
 (test-assert "restarter objects 2"
  (call-with-current-continuation
   (lambda (k)
-    (with-interactor
-     (lambda (rs) (restart/tag 'use-not-value rs #f))
+    (with-exception-handler
+     (lambda (con) (restart/tag 'use-not-value con #f))
      (lambda ()
        (raise-continuable
         (make-restarter 'use-not-value
@@ -45,9 +47,9 @@
  '(dump-restarter-data "Return restarter info as a list." () foo)
  (call-with-current-continuation
   (lambda (k)
-    (with-interactor
-     (lambda (rs)
-       (restart/tag 'dump-restarter-data rs))
+    (with-exception-handler
+     (lambda (con)
+       (restart/tag 'dump-restarter-data con))
      (lambda ()
        (letrec*
         ((dump
@@ -65,8 +67,8 @@
          (raise-continuable r)))))))
 
 (test-assert "restarter-guard 1"
- (with-interactor
-  (lambda (rs) (restart/tag 'return-true rs))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'return-true con))
   (lambda ()
     (restarter-guard
      (((return-true) "Return #t." #t))
@@ -74,16 +76,16 @@
 
 (test-equal "restarter-guard 2"
  '(1 2 3)
- (with-interactor
-  (lambda (rs) (restart/tag 'return-values rs 1 2 3))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'return-values con 1 2 3))
   (lambda ()
     (restarter-guard
      (((return-values . vs) "Return vs." vs))
      (error 'no-one "something happen!")))))
 
 (test-assert "restartable 1"
- (with-interactor
-  (lambda (rs) (restart/tag 'use-arguments rs #t))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con #t))
   (lambda ()
     (restartable
      define (f x)
@@ -94,8 +96,8 @@
 
 (test-equal "restartable 2"
  '(1 2)
- (with-interactor
-  (lambda (rs) (restart/tag 'use-arguments rs 1 2))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
   (lambda ()
     (restartable
      define (f . xs)
@@ -105,8 +107,8 @@
     (f))))
 
 (test-assert "restartable 3"
- (with-interactor
-  (lambda (rs) (restart/tag 'use-arguments rs #t))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con #t))
   (lambda ()
     (restartable
      define f
@@ -118,8 +120,8 @@
 
 (test-equal "restartable 4"
  '(2 3 4 5)
- (with-interactor
-  (lambda (rs) (restart/tag 'use-arguments rs 3))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 3))
   (lambda ()
     (map (restartable
           "anonymous"
@@ -128,8 +130,8 @@
 	 '(1 2 #f 4)))))
 
 (test-assert "with-abort-restarter 1"
- (with-interactor
-  (lambda (rs) (restart/tag 'abort rs))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'abort con))
   (lambda ()
     (with-abort-restarter
      (lambda ()

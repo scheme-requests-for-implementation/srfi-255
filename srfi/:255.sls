@@ -36,9 +36,6 @@
           restarter-guard
           restartable
 	  restart
-          with-interactor
-          with-current-interactor
-          current-interactor
           default-interactor
           with-abort-restarter)
 
