@@ -443,7 +443,47 @@ of the restarter is filled by <var class="syn">who</var>.</p>
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
 restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
 
-  <code>⇒ (10 5 10/3 5/2)</code></pre>
+  <code>⇒ (10 5 10/3 5/2)
+
+;; A 'map' procedure with two restarts. The first allows the
+;; user to provide a list to return as the value of the whole
+;; 'map-restartable' computation, while the second re-invokes
+;; *proc* with new arguments.
+(define (map-restartable proc-who proc lis)
+  (restarter-guard map-restartable
+    (mcon ((use-list new-lis)
+           "Return new-lis as the value of map-restartable."
+           (assert (list? new-lis))
+           new-lis))
+    (map (restartable proc-who proc) lis)))
+
+&gt;</code> <samp>(with-exception-handler
+    default-interactor
+    (lambda ()
+      (map-restartable "divider"
+                       (lambda (x) (/ 10 x)))
+	               '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+(use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
+restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
+
+  ⇒ (#f)
+
+<code>&gt;</code> <samp>(with-exception-handler
+    default-interactor
+    (lambda ()
+      (map-restartable "divider"
+                       (lambda (x) (/ 10 x)))
+	               '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+(use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
+restart[0]&gt;</code> <samp>(use-arguments -1)</samp>
+
+  <code>⇒ (10 5 -10 5/2)</code></pre>
 
 <!-- define-restartable form -->
 
