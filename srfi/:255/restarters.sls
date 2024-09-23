@@ -47,10 +47,12 @@
           (rnrs control (6))
           (rnrs exceptions (6))
           (rnrs eval (6))
+          (rnrs hashtables (6))
           (rnrs io simple (6))
           (rnrs lists (6))
           (rnrs syntax-case (6))
-          (srfi :39))
+          (srfi :39)
+          (srfi :255 helpers))
 
   (define-condition-type &restarter &condition
     make-restarter restarter?
@@ -167,41 +169,43 @@
       (with-interactor (current-interactor) thunk)))
 
   (define-syntax restarter-guard
-    (syntax-rules ()
-      ((_ (x ...) body ...)
-       (restarter-guard #f (x ...) body ...))
-      ((_ who ((x ...) ...) body ...)
-       ; inject 'con' for the condition object.
-       (restarter-guard who (con (x ...) ...) body ...))
-      ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
-          body1 body2 ...)
-       ((call-with-current-continuation  ; apply the returned value
-         (lambda (k)
-           (with-exception-handler
-             (lambda (con)
-               (if (condition? con)
-                   (raise-continuable
-                    (condition
-                     con
-                     (build-restarter k tag description arg* who e1 e2 ...)
-                     ...))
-                   (raise-continuable con)))
-             (lambda ()
-               (call-with-values
-                (lambda () body1 body2 ...)
-                (lambda vals
-                  (k (lambda () (apply values vals)))))))))))))
-
-  ;; Helper for restarter-guard.
-  (define-syntax build-restarter
-    (syntax-rules ()
-      ((_ k tag desc arg* who e1 e2 ...)
-       (make-restarter 'tag
-                       desc
-                       'who
-		       'arg*
-		       (lambda arg*
-                         (k (lambda () e1 e2 ...)))))))
+    (lambda (syn)
+      (syntax-case syn ()
+        ((_ (x ...) body ...)
+         (syntax (restarter-guard #f (x ...) body ...)))
+        ((_ who (c1 c2 ...) body ...)
+         (not (identifier? #'c1))
+         (syntax (restarter-guard who (con c1 c2 ...) body ...)))
+        ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
+           body ...)
+         (and (identifier? #'con) (all-ids? #'(tag ...)))
+         (begin
+          (check-unique-ids 'restarter-guard syn (syntax (tag ...)))
+          (with-syntax (((r ...) (generate-temporaries #'(tag ...))))
+            (syntax
+             ((call-with-current-continuation
+               (lambda (k)
+                 (let ((r (make-restarter 'tag
+                                          description
+                                          'who
+                                          'arg*
+                                          (lambda arg*
+                                            (k (lambda ()
+                                                 e1 e2 ...))))) ...)
+                   (with-exception-handler
+                    (lambda (con)
+                      (raise-continuable
+                       (if (condition? con) (condition con r ...) con)))
+                    (lambda ()
+                      ;; The body must be evaluated in the dynamic
+                      ;; extent of the handler we just installed, so
+                      ;; we can't just apply k to (lambda () body ...).
+                      ;; Instead, we have a little dance to do.
+                      (call-with-values
+                       (lambda () body ...)
+                       (lambda vals
+                         (k (lambda ()
+                              (apply values vals))))))))))))))))))
 
   (define-syntax restartable
     (syntax-rules (define)
