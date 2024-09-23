@@ -239,7 +239,7 @@ must not return to its caller.</p>
                con)))
         (lambda () (/ x y)))))))
 
-> <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
+&gt; <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
 (return-value x) [safe-/]: Return x.
@@ -409,7 +409,7 @@ to the continuation of the <code>restarter-guard</code> form.</p>
           0))
     (/ a b)))
 
-> <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
+&gt; <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
 (return-value v) [safe-/]: Return a specific value.
