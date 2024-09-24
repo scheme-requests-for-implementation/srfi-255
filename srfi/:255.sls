@@ -32,7 +32,7 @@
           restarter-description
           restarter-invoker
           restarter-who
-          restartable
+          define-restartable
           restarter-guard
           restartable
 	  restart

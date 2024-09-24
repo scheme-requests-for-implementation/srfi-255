@@ -33,7 +33,7 @@
           restarter-invoker
           restarter-who
           restart
-          restartable
+          define-restartable
           restarter-guard
           restartable
           default-interactor
@@ -191,32 +191,8 @@
                               (apply values vals))))))))))))))))))
 
   (define-syntax restartable
-    (syntax-rules (define)
-      ((_ define ((x) . rest) _ ...)
-       (syntax-violation 'restartable
-                         "invalid syntax"
-                         (define ((x) . rest))))
-      ((_ define (name arg ...) body1 body2 ...)
-       (define name
-         (let ((proc (lambda (arg ...) body1 body2 ...)))
-           (lambda (arg ...)
-             (restarter-guard name
-                              (((use-arguments arg ...)
-                                "Apply procedure to new arguments."
-                                (name arg ...)))
-               (proc arg ...))))))
-      ((_ define (name . args) body1 body2 ...)
-       (define name
-         (let ((proc (lambda args body1 body2 ...)))
-           (lambda args
-             (restarter-guard name
-                              (((use-arguments . args)
-                                "Apply procedure to new arguments."
-                                (apply name args)))
-               (apply proc args))))))
-      ((_ define name expr)
-       (define name (restartable name expr)))
-      ((_ who expr)
+    (syntax-rules ()
+     ((_ who expr)
        (letrec*
         ((proc expr)
          (junk (if (not (procedure? proc))
@@ -232,6 +208,33 @@
                                (apply restartable-proc args)))
               (apply proc args)))))
          restartable-proc))))
+
+  (define-syntax define-restartable
+    (syntax-rules ()
+      ((_ ((x) . rest) _ ...)
+       (syntax-violation 'restartable
+                         "invalid syntax"
+                         (define ((x) . rest))))
+      ((_ (name arg ...) body1 body2 ...)
+       (define name
+         (let ((proc (lambda (arg ...) body1 body2 ...)))
+           (lambda (arg ...)
+             (restarter-guard name
+                              (((use-arguments arg ...)
+                                "Apply procedure to new arguments."
+                                (name arg ...)))
+               (proc arg ...))))))
+      ((_ (name . args) body1 body2 ...)
+       (define name
+         (let ((proc (lambda args body1 body2 ...)))
+           (lambda args
+             (restarter-guard name
+                              (((use-arguments . args)
+                                "Apply procedure to new arguments."
+                                (apply name args)))
+               (apply proc args))))))
+      ((_ name expr)
+       (define name (restartable name expr)))))
 
   (define with-abort-restarter
     (lambda (thunk)

@@ -83,42 +83,39 @@
      (((return-values . vs) "Return vs." vs))
      (error 'no-one "something happen!")))))
 
-(test-assert "restartable 1"
+(test-assert "define-restartable 1"
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con #t))
   (lambda ()
-    (restartable
-     define (f x)
-       (if (not x)
-           (error 'f "false")
-	   x))
+    (define-restartable (f x)
+      (if (not x)
+          (error 'f "false")
+          x))
     (f #f))))
 
-(test-equal "restartable 2"
+(test-equal "define-restartable 2"
  '(1 2)
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con 1 2))
   (lambda ()
-    (restartable
-     define (f . xs)
-       (if (null? xs)
-           (error 'f "empty")
-	   xs))
+    (define-restartable (f . xs)
+      (if (null? xs)
+          (error 'f "empty")
+          xs))
     (f))))
 
-(test-assert "restartable 3"
+(test-assert "define-restartable 3"
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con #t))
   (lambda ()
-    (restartable
-     define f
-       (lambda (x)
-         (if (not x)
-	     (error 'f "false")
-	     x)))
+    (define-restartable f
+      (lambda (x)
+        (if (not x)
+            (error 'f "false")
+            x)))
     (f #f))))
 
-(test-equal "restartable 4"
+(test-equal "restartable 1"
  '(2 3 4 5)
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con 3))
