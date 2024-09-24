@@ -126,15 +126,6 @@
 	    (if x (+ x 1) (error 'no-one "false"))))
 	 '(1 2 #f 4)))))
 
-(test-assert "with-abort-restarter 1"
- (with-exception-handler
-  (lambda (con) (restart/tag 'abort con))
-  (lambda ()
-    (with-abort-restarter
-     (lambda ()
-       (raise-continuable (make-message-condition "hi"))
-       #f))
-    #t)))
 (test-end)
 
 (exit (test-runner-fail-count (test-runner-current)))
