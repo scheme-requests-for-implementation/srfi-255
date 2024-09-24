@@ -289,12 +289,18 @@ the result is undefined.</p>
 <p>An <dfn>interactor</dfn> is an exception handler as described in
 <cite>R6RS</cite> §7.1. If it is passed a restarter
 or a compound condition with
-one or more restarter components, then the interactor presents the
-information fields of those restarters to the user,
-who then picks a tag and provides a list of
-expressions. Those expressions are then evaluated in an unspecified
-environment and <code>restart</code> is applied to the chosen restarter
-and the user-provided values.</p>
+one or more restarter components, then the interactor presents
+these restarters to the user. The information presented should include
+the tag, description, and formals of each restarter. The user
+then selects a restarter and provides any additional data which that
+restarter needs. Finally, the interactor invokes the chosen restarter.</p>
+
+<p>The precise manner of interaction is unspecified. An interactor
+may present the available restarters through a graphical menu, a
+traditional command-line prompt, or something else. An interactor
+may or may not evaluate (in the sense of <code>eval</code>) any
+Scheme data received from the user (e.g. arguments to the selected
+restarter’s invoker).</p>
 
 <p><code>(default-interactor</code> <var>condition</var><code>)</code></p>
 
@@ -302,18 +308,9 @@ and the user-provided values.</p>
 as described above, and should be exposed to allow interactive restarts
 in user code.</p>
 
-<pre class="example"><code>&gt; <samp>(with-exception-handler
-   default-interactor
-   (lambda ()
-     (restarter-guard 'foo
-       (con ((use-value x) "Return x." x))
-       (/ 10 0))))</samp>
-
-Restartable exception occurred.
-(use-value expr) [foo]: Return the value of expr.
-restart[0]&gt; <samp>(use-value (/ 10 2))</samp>
-
-  ⇒ 5</code></pre>
+<p>(The interactive behavior of one possible default interactor is
+presented in examples throughout this document. These examples are
+non-normative.)</p>
 
 <!-- Syntax section -->
 
