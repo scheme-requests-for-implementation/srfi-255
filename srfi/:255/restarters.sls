@@ -82,11 +82,11 @@
                 (let loop ()  ; main interaction loop
                   (call-with-current-continuation
                    (lambda (retry)
-	             (interact restarters level abort retry)))
-	             (loop)))))
-	  (if (non-continuable-violation? obj)
-	      (raise obj)
-	      (raise-continuable obj)))))
+                     (interact restarters level abort retry)))
+                     (loop)))))
+          (if (non-continuable-violation? obj)
+              (raise obj)
+              (raise-continuable obj)))))
 
   (define default-interactor (make-default-interactor 0))
 
@@ -106,22 +106,22 @@
        (lambda ()
          (restarter-guard default-interactor
                           (interaction-con
-			   ((retry)
-			    "default-interactor: retry"
-			    (retry)))
+                           ((retry)
+                            "default-interactor: retry"
+                            (retry)))
            (assert (pair? choice))
-	   ;; Lookup restarter by tag.
-	   (cond ((assv (car choice) restarters-by-tag) =>
-	          (lambda (p)
-	            (let ((r (cdr p))
-		          (vals (map (lambda (e)
-		                       (eval e (environment
-				                '(rnrs))))
-				     (cdr choice))))
-		      (apply restart r vals))))
-	         (else (error 'default-interactor
-	                      "invalid restarter choice"
-			      choice)))))))
+           ;; Lookup restarter by tag.
+           (cond ((assv (car choice) restarters-by-tag) =>
+                  (lambda (p)
+                    (let ((r (cdr p))
+                          (vals (map (lambda (e)
+                                       (eval e (environment
+                                                '(rnrs))))
+                                     (cdr choice))))
+                      (apply restart r vals))))
+                 (else (error 'default-interactor
+                              "invalid restarter choice"
+                              choice)))))))
 
     (display "Restartable exception occurred.\n")
     (show-restarters restarters)
@@ -132,23 +132,23 @@
       (let ((choice (read)))
         (when (eof-object? choice) (abort))  ; TODO: Improve behavior
         (let-values ((vals (invoke-selection choice)))
-	  (unless (null? vals)
-	    (for-each (lambda (v)
-	                (display v)
-		        (newline))
-		      vals))
-	  (loop)))))
+          (unless (null? vals)
+            (for-each (lambda (v)
+                        (display v)
+                        (newline))
+                      vals))
+          (loop)))))
 
   ;; Print a list of restarters.
   (define (show-restarters restarters)
     (for-each (lambda (r)
                 (write `(,(restarter-tag r) . ,(restarter-formals r)))
-		(display " [")
-		(display (restarter-who r))
-		(display "]: ")
-		(display (restarter-description r))
-		(newline))
-	      restarters))
+                (display " [")
+                (display (restarter-who r))
+                (display "]: ")
+                (display (restarter-description r))
+                (newline))
+              restarters))
 
   (define-syntax restarter-guard
     (lambda (syn)

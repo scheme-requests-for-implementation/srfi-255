@@ -35,7 +35,7 @@
           define-restartable
           restarter-guard
           restartable
-	  restart
+          restart
           default-interactor
           )
 
