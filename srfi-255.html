@@ -14,6 +14,9 @@
       /* Names of Scheme types: boolean, pair, etc. */
       span.type-meta { font-style: italic }
 
+      /* Channel name on IRC or similar services. */
+      span.channel { font-family: monospace }
+
       dt {
           font-style: italic;
           margin-top: 0.5em;
@@ -127,15 +130,14 @@ system that the ability to <em>interactively</em> choose a method of
 recovery for a condition is useful.  This ability, built into the Common
 Lisp language, is one of the primary reasons for the power of Common Lisp
 development and debugging environments. In this SRFI, the interactivity
-is provided by an <dfn>interactor procedure</dfn> that by default is
-provided by the implementation, but can be overridden by the user.</p>
+is provided by an <dfn>interactor</dfn>, a kind of exception handler.</p>
 
 <h3>SRFI 249</h3>
 
 <p>An earlier attempt at a restart system was made by the authors of
 <a href="https://srfi.schemers.org/srfi-249/">SRFI 249</a>, on which
 the current SRFI was originally based. The SRFI 249 system is very
-simple--indeed, it is less a restart system than a
+simple—indeed, it is less a restart system than a
 “build-your-own-restart-system” kit, since it requires careful
 programming to create correct restarters with the low-level tools
 that SRFI 249 provides. In contrast, SRFI 255 provides a high-level
@@ -220,6 +222,35 @@ object raised by the triggering exception as one of its components.</p>
 of restarter fields. In particular, the <var>invoker</var> procedure
 must not return to its caller.</p>
 
+<h5>Example:</h5>
+
+<pre class="example"><code>(define (safe-/ x y)
+  (call/cc
+   (lambda (return-value)
+     (let ((val-restarter
+            (make-restarter 'return-value
+                            "Return x."
+                            'safe-/
+                            '(x)
+                            return-value)))
+       (with-exception-handler
+        (lambda (con)
+          (raise-continuable
+           (if (condition? con)
+               (condition con val-restarter)
+               con)))
+        (lambda () (/ x y)))))))
+
+&gt; <samp>(with-exception-handler
+   default-interactor
+   (lambda () (safe-/ 1 0)))</samp>
+
+Restartable exception occurred.
+(return-value x) [safe-/]: Return x.
+restart[0]&gt; <samp>(return-value 4)</samp>
+
+  ⇒ 4</code></pre>
+
 <p><code>(restarter?</code> <var>obj</var><code>)</code> →
 <span class="type-meta">boolean</span></p>
 
@@ -251,60 +282,35 @@ undefined.</p>
 <p>If <var>restarter</var>’s invoker returns, then
 the result is undefined.</p>
 
-<p><code>(with-abort-restarter</code> <var>thunk</var><code>)</code></p>
-
-<p>Establishes a restarter with tag <code>abort</code> for the dynamic
-extent of <var>thunk</var> (as determined by <code>dynamic-wind</code>).
-The <code>abort</code> restarter accepts zero arguments. When invoked,
-execution resumes with the continuation and dynamic environment of the
-<code>with-abort-restarter</code> form.</p>
-
 <!-- Interactors section -->
 
 <h4 id="interactors">Interactors</h4>
 
-<p>An <dfn>interactor</dfn> is a procedure of one argument, a list of
-restarters. The interactor presents the information fields
-of those restarters to the user, who then
-picks a tag and provides a list of expressions. Those expressions are
-then evaluated in an unspecified environment
-and <code>restart</code>
-is applied to the chosen restarter and the user-provided values.</p>
+<p>An <dfn>interactor</dfn> is an exception handler as described in
+<cite>R6RS</cite> §7.1. If it is passed a restarter
+or a compound condition with
+one or more restarter components, then the interactor presents
+these restarters to the user. The information presented should include
+the tag, description, and formals of each restarter. The user
+then selects a restarter and provides any additional data which that
+restarter needs. Finally, the interactor invokes the chosen restarter.</p>
 
-<p>If an interactor returns, a non-continuable exception [TODO: of what
-type?] is raised.</p>
+<p>The precise manner of interaction is unspecified. An interactor
+may present the available restarters through a graphical menu, a
+traditional command-line prompt, or something else. An interactor
+may or may not evaluate (in the sense of <code>eval</code>) any
+Scheme data received from the user (e.g. arguments to the selected
+restarter’s invoker).</p>
 
-<p><code>(with-interactor</code> <var>interactor</var>
-<var>thunk</var><code>)</code></p>
+<p>(The interactive behavior of one possible interactor is
+presented in examples throughout this document. These examples are
+non-normative.)</p>
 
-<p>Returns the results of invoking <var>thunk</var>. A new current
-exception handler is installed for the dynamic extent (as determined by
-<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If a
-restartable condition is raised in this extent, the handler invokes
-<var>interactor</var> on the list of available restarters provided by
-that condition.</p>
+<p><code>(default-interactor</code> <var>condition</var><code>)</code></p>
 
-<!--
-  An example here is important, since this is the main interface
-  to "unsupervised" restarts.
- -->
-
-<p><code>(with-current-interactor</code>
-<var>thunk</var><code>)</code></p>
-
-<p>Equivalent to</p>
-
-<pre class="example"><code>(with-interactor (current-interactor) <var>thunk</var>)</code></pre>
-
-<!-- Parameters section -->
-
-<h3 id="parameter-objects">Parameter objects</h3>
-
-<p><code>current-interactor</code></p>
-
-<p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> /
-<cite>R7RS</cite> parameter object whose value is an interactor
-procedure.</p>
+<p>The system’s default interactive handler. This is an interactor
+as described above, and should be exposed to allow interactive restarts
+in user code.</p>
 
 <!-- Syntax section -->
 
@@ -339,6 +345,9 @@ tag are identifiers. <var class="syn">formals</var> is a formals list
 as specified in Section 4.1.4 of the <cite>R7RS</cite>.
 <var class="syn">description</var> is a string.</p>
 
+<p>A syntax error is signalled if any <var class="syn">tag</var>
+appears in more than one clause.</p>
+
 <h5>Semantics:</h5>
 
 <p>Installs a new exception handler for the dynamic extent (as
@@ -369,17 +378,19 @@ to the continuation of the <code>restarter-guard</code> form.</p>
 <pre class="example"><code>(define (safe-/ a b)
   (restarter-guard safe-/
     (con ((return-value v)
-	  "Return a specific value."
-	  v)
-	 ((return-numerator)
+          "Return a specific value."
+          v)
+         ((return-numerator)
           "Return the numerator."
-	  a)
-	 ((return-zero)
-	  "Return zero."
+          a)
+         ((return-zero)
+          "Return zero."
           0))
     (/ a b)))
 
-> <samp>(with-current-interactor (lambda () (safe-/ 1 0)))</samp>
+&gt; <samp>(with-exception-handler
+   default-interactor
+   (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
 (return-value v) [safe-/]: Return a specific value.
@@ -389,22 +400,106 @@ restart[0]&gt; <samp>(return-numerator)</samp>
 
   ⇒ 1</code></pre>
 
-<h4>Restartable procedure syntax</h4>
+<!-- restartable form -->
 
-<p>A <code>restartable</code> form wraps a procedure in code allowing
-the procedure to be re-invoked on new arguments if an assertion
-violation occurs. It takes one of the following forms:</p>
+<h4>Restartable procedures</h4>
+
+<p>The <code>restartable</code>
+form wraps a procedure in code allowing
+it to be re-invoked on new arguments if an assertion
+violation occurs.</p>
+
+<p><code>(restartable</code> <var class="syn">who</var>
+<var class="syn">expr</var><code>)</code></p>
+
+<h5>Syntax:</h5>
+
+<p><var class="syn">who</var> must be a symbol or string.</p>
+
+<h5>Semantics:</h5>
+
+<p><var class="syn">expr</var> must evaluate to a procedure. The
+<code>restartable</code> form establishes a restarter with tag
+<code>use-arguments</code> for the
+dynamic extent of this procedure’s invocation. If an assertion
+violation (an exception raising a condition having type
+<code>&amp;assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
+the restarter accepts new formals and re-invokes the procedure on
+these arguments. The <code>who</code> field
+of the restarter is filled by <var class="syn">who</var>.</p>
+
+<h5>Examples:</h5>
+
+<pre class="example"><code>&gt;</code> <samp>(with-exception-handler
+    default-interactor
+    (lambda ()
+      (map (restartable "divider" (lambda (x) (/ 10 x)))
+           '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
+
+  <code>⇒ (10 5 10/3 5/2)
+
+;; A 'map' procedure with two restarts. The first allows the
+;; user to provide a list to return as the value of the whole
+;; 'map-restartable' computation, while the second re-invokes
+;; *proc* with new arguments.
+(define (map-restartable proc-who proc lis)
+  (restarter-guard map-restartable
+    (mcon ((use-list new-lis)
+           "Return new-lis as the value of map-restartable."
+           (assert (list? new-lis))
+           new-lis))
+    (map (restartable proc-who proc) lis)))
+
+&gt;</code> <samp>(with-exception-handler
+    default-interactor
+    (lambda ()
+      (map-restartable "divider"
+                       (lambda (x) (/ 10 x)))
+                       '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+(use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
+restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
+
+  ⇒ (#f)
+
+<code>&gt;</code> <samp>(with-exception-handler
+    default-interactor
+    (lambda ()
+      (map-restartable "divider"
+                       (lambda (x) (/ 10 x)))
+                       '(1 2 0 4))))</samp>
+
+<code>Restartable exception occurred.
+(use-arguments . args) [divider]: Apply the procedure to new arguments.
+(use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
+restart[0]&gt;</code> <samp>(use-arguments -1)</samp>
+
+  <code>⇒ (10 5 -10 5/2)</code></pre>
+
+<!-- define-restartable form -->
+
+<h4>Restartable procedure definitions</h4>
+
+<p>A restartable procedure definition takes one of the following
+forms:</p>
 
 <ul>
-  <li><p><code>(restartable define</code> <var class="syn">variable</var>
-  <var class="syn">body</var><code>)</code></p></li>
-
-  <li><p><code>(restartable define (</code><var class="syn">variable</var>
+  <li><p><code>(define-restartable (</code><var class="syn">variable</var>
   <var class="syn">formals</var><code>)</code>
-  <var class="syn">expr</var><code>)</code></p>
+  <var class="syn">body</var><code>)</code></p>
 
-  <p><var class="syn">expr</var> must evaluate to a procedure. The
-  <code>restartable</code> form defines <var class="syn">variable</var>,
+  <li><p><code>(define-restartable (</code><var class="syn">variable</var>
+  <code>.</code> <var class="syn">formal</var><code>)</code>
+  <var class="syn">body</var><code>)</code></p>
+
+  <p>The
+  <code>define-restartable</code> form defines <var class="syn">variable</var>,
   binding it to a new procedure. A restarter with tag
   <code>use-arguments</code> is established for the
   dynamic extent of this procedure's invocation. If an assertion
@@ -413,41 +508,34 @@ violation occurs. It takes one of the following forms:</p>
   the restarter accepts new formals and re-invokes the procedure on
   these arguments. The <code>who</code> and <code>formals</code> fields
   of the restarter are filled by <var class="syn">variable</var> and
-  <var class="syn">formals</var> (if provided), respectively.</p></li>
+  <var class="syn">formals</var> / <var class="syn">formal</var>
+  (if provided), respectively.</p></li>
 
-  <li><p><code>(restartable</code> <var class="syn">who</var>
-  <var class="syn">expr</var><code>)</code></p>
+  <li><p><code>(define-restartable</code> <var class="syn">variable</var>
+    <var class="syn">expr</var><code>)</code></p>
 
-  <p>Evaluates to a procedure with the restartable-invocation
-  semantics described above. <var class="syn">who</var> gives the
-  <code>who</code> field for the restarter; it must be an identifier or
-  string.</p></li>
+    <p>Shorthand for</p>
+
+    <pre class="example"><code>(define</code> <var class="syn">variable</var>
+  <code>(restartable</code> <var class="syn">variable</var>
+    <var class="syn">expr</var><code>)</code></pre>
+  </li>
 </ul>
 
-<h5>Examples:</h5>
+<h5>Example:</h5>
 
-<pre class="example"><code>(restartable
-  define (safe-/ x y)
-    (/ x y))
+<pre class="example"><code>(define-restartable (safe-/ x y)
+  (/ x y))
 
-> <samp>(with-current-interactor (lambda () (safe-/ 4 0)))</samp>
+&gt;</code> <samp>(with-exception-handler
+   default-interactor
+   (lambda () (safe-/ 4 0)))</samp>
 
-Restartable exception occurred.
+<code>Restartable exception occurred.
 (use-arguments x y) [safe-/]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(replace-arguments 4 2)</samp>
+restart[0]&gt;</code> <samp>(use-arguments 4 2)</samp>
 
-  ⇒ 2
-
-> <samp>(with-current-interactor
-    (lambda ()
-      (map (restartable "divider" (lambda (x) (/ 10 x)))
-	   '(1 2 0 4))))</samp>
-
-Restartable exception occurred.
-(replace-arguments . args) [divider]: Apply the procedure to new arguments.
-restart[0]&gt; <samp>(replace-arguments 3)</samp>
-
-  ⇒ (10 5 10/3 5/2)</code></pre>
+  <code>⇒ 2</code></pre>
 
 <!-- Standard restart tags section -->
 
@@ -483,9 +571,7 @@ when naming their restarters.</p>
 <h2 id="implementation">Implementation</h2>
 <p>The implementation is available at
 <a href="https://github.com/scheme-requests-for-implementation/srfi-255">Github</a>.
-It is in portable R6RS Scheme, and should be easy to port to other
-Scheme implementations with similar exception and condition
-systems.</p>
+It is in portable R6RS Scheme.</p>
 
 <h2 id="acknowledgements">Acknowledgements</h2>
 
@@ -505,6 +591,11 @@ Silanskas and revised by Wolfgang Corcoran-Mathe.</p>
 <p>Thanks to John Cowan for his work on SRFI 249, and his tireless
 work on so much else in Scheme.</p>
 
+<p>Thanks to those who provided reviews and commentary via the SRFI
+255 mailing list or the <span class="channel">#scheme</span> IRC
+channel, including: Arthur A. Gleckler, Daphne Preston-Kendal,
+and Andrew Whatson.</p>
+
 <h2 id="references">References</h2>
 
 <p>Alex Shinn, John Cowan, &amp; Arthur A. Gleckler, eds.,
@@ -523,8 +614,8 @@ Levels</cite>. (RFC 2119) (1997).
 https://datatracker.ietf.org/doc/html/rfc2119</p>
 
 <h2 id="copyright">Copyright</h2>
-<p>&copy; 2023 Taylor Campbell, John Cowan, Wolfgang
-Corcoran-Mathe), Arvydas Silanskas.</p>
+<p>&copy; 2024 Taylor Campbell, John Cowan, Wolfgang
+Corcoran-Mathe, Marc Nieper-Wißkirchen, Arvydas Silanskas.</p>
 
 <p>
   Permission is hereby granted, free of charge, to any person

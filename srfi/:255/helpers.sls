@@ -23,20 +23,42 @@
 ;;; OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 ;;; WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-(library (srfi :255)
-  (export &restarter
-          make-restarter
-          restarter?
-          restarter-tag
-          restarter-formals
-          restarter-description
-          restarter-invoker
-          restarter-who
-          define-restartable
-          restarter-guard
-          restartable
-          restart
-          default-interactor
-          )
+;; Based on MNW's SRFI 241 sample implementation.
 
-  (import (srfi :255 restarters)))
+(library (srfi :255 helpers)
+  (export all-ids? check-unique-ids)
+  (import (rnrs base (6))
+          (rnrs hashtables (6))
+          (rnrs lists (6))
+          (rnrs syntax-case (6)))
+
+  (define (all-ids? xs)
+    (for-all identifier? xs))
+
+  (define (identifier-hash id)
+    (assert (identifier? id))
+    (symbol-hash (syntax->datum id)))
+
+  (define (make-identifier-hashtable)
+    (make-hashtable identifier-hash bound-identifier=?))
+
+  ;; If *ids* contains duplicate identifiers, signal an error.
+  ;; *syn* is the relevant syntax object.
+  (define (check-unique-ids who syn ids)
+    (let ((id-table (make-identifier-hashtable))
+          (mark (lambda (id)
+                  (lambda (x)
+                    (if x
+                        (repeated-identifier-error who syn id)
+                        #t)))))
+      (for-each (lambda (id)
+                  (hashtable-update! id-table id (mark id) #f))
+                ids)))
+
+  (define (repeated-identifier-error who syn id)
+    (syntax-violation who
+                      "duplicate identifier found:"
+                      syn
+                      id))
+
+  )
