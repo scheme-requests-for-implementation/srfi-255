@@ -282,14 +282,6 @@ undefined.</p>
 <p>If <var>restarter</var>’s invoker returns, then
 the result is undefined.</p>
 
-<p><code>(with-abort-restarter</code> <var>thunk</var><code>)</code></p>
-
-<p>Establishes a restarter with tag <code>abort</code> for the dynamic
-extent of <var>thunk</var> (as determined by <code>dynamic-wind</code>).
-The <code>abort</code> restarter accepts zero arguments. When invoked,
-execution resumes with the continuation and dynamic environment of the
-<code>with-abort-restarter</code> form.</p>
-
 <!-- Interactors section -->
 
 <h4 id="interactors">Interactors</h4>

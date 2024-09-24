@@ -37,6 +37,6 @@
           restartable
 	  restart
           default-interactor
-          with-abort-restarter)
+          )
 
   (import (srfi :255 restarters)))

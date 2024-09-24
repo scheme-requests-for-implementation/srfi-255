@@ -37,7 +37,7 @@
           restarter-guard
           restartable
           default-interactor
-          with-abort-restarter)
+          )
 
   (import (rnrs base (6))
           (rnrs conditions (6))
@@ -235,15 +235,5 @@
                (apply proc args))))))
       ((_ name expr)
        (define name (restartable name expr)))))
-
-  (define with-abort-restarter
-    (lambda (thunk)
-      (call/cc
-       (lambda (abort)
-         (restarter-guard
-             ([(abort)
-               "abort"
-               (abort)])
-           (thunk))))))
 
   )
