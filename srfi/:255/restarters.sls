@@ -48,7 +48,6 @@
           (rnrs io simple (6))
           (rnrs lists (6))
           (rnrs syntax-case (6))
-          (srfi :39)
           (srfi :255 helpers))
 
   (define-condition-type &restarter &condition
