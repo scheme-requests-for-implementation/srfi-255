@@ -58,27 +58,42 @@
            <em>draft</em> status (<a href="https://htmlpreview.github.io/?https://github.com/Zipheir/srfi-255/blob/master/srfi-255.html">preview</a>)</li>
       <li>Draft #1 published: 2024-09-13</li>
       <li>Draft #2 published: 2024-09-17</li>
+      <li>Draft #3 published: 2024-09-24</li>
     </ul>
 
 <h2 id="table-of-contents">Table of Contents</h2>
 
 <ol>
-  <li><a href="#abstract">Abstract</a></li>
-  <li><a href="#issues">Issues</a></li>
-  <li><a href="#rationale">Rationale</a></li>
-  <li><a href="#specification">Specification</a>
+  <li>
+    <a href="#rationale">Rationale</a>
     <ol>
-      <li><a href="#procedures">Procedures</a></li>
-      <li><a href="#parameter-objects">Parameter objects</a></li>
-      <li><a href="#syntax">Syntax</a></li>
-      <li><a href="#standard-restart-tags">Proposed standard restart
-      tags</a></li>
+      <li><a href="#srfi-249">SRFI 249</a></li>
+    </ol>
+  </li>
+  <li>
+    <a href="#specification">Specification</a>
+    <ol>
+      <li><a href="#notation">Notation</a></li>
+      <li><a href="#restarter-conditions">Restarter conditions</a></li>
+      <li>
+        <a href="#procedures">Procedures</a>
+        <ol>
+          <li><a href="#interactors">Interactors</a></li>
+        </ol>
+      </li>
+      <li>
+        <a href="#syntax">Syntax</a>
+        <ol>
+          <li><a href="#restartable-procedures">Restartable procedures</a></li>
+          <li><a href="#restartable-procedure-definitions">Restartable procedure definitions</a></li>
+        </ol>
+      </li>
+      <li><a href="#standard-restart-tags">Proposed standard restart tags</a></li>
     </ol>
   </li>
   <li><a href="#implementation">Implementation</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
   <li><a href="#references">References</a></li>
-  <li><a href="#copyright">Copyright</a></li>
 </ol>
 
 <h2 id="abstract">Abstract</h2>
@@ -132,7 +147,7 @@ Lisp language, is one of the primary reasons for the power of Common Lisp
 development and debugging environments. In this SRFI, the interactivity
 is provided by an <dfn>interactor</dfn>, a kind of exception handler.</p>
 
-<h3>SRFI 249</h3>
+<h3 id="srfi-249">SRFI 249</h3>
 
 <p>An earlier attempt at a restart system was made by the authors of
 <a href="https://srfi.schemers.org/srfi-249/">SRFI 249</a>, on which
@@ -160,7 +175,7 @@ manage restarters, there is no need for this complication.</p>
 
 <p>The words “must”, “may”, etc., though not capitalized in this
 SRFI, are to be interpreted as described in
-<a href="https://tools.ietf.org/html/rfc2119">RFC 2119</a>.</p>
+<a href="https://datatracker.ietf.org/doc/html/rfc2119">RFC 2119</a>.</p>
 
 <p>The naming conventions of this document are similar to those used
 in the Scheme Reports: names such as <var>symbol</var>,
@@ -402,7 +417,7 @@ restart[0]&gt; <samp>(return-numerator)</samp>
 
 <!-- restartable form -->
 
-<h4>Restartable procedures</h4>
+<h4 id="restartable-procedures">Restartable procedures</h4>
 
 <p>The <code>restartable</code>
 form wraps a procedure in code allowing
@@ -484,7 +499,7 @@ restart[0]&gt;</code> <samp>(use-arguments -1)</samp>
 
 <!-- define-restartable form -->
 
-<h4>Restartable procedure definitions</h4>
+<h4 id="restartable-procedure-definitions">Restartable procedure definitions</h4>
 
 <p>A restartable procedure definition takes one of the following
 forms:</p>
