@@ -84,9 +84,7 @@
                    (lambda (retry)
                      (interact restarters level abort retry)))
                      (loop)))))
-          (if (non-continuable-violation? obj)
-              (raise obj)
-              (raise-continuable obj)))))
+          (raise-continuable obj))))
 
   (define default-interactor (make-default-interactor 0))
 
