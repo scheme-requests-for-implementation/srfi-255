@@ -91,10 +91,18 @@
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.
   (define (interact restarters level abort retry)
-    ;; Alist associating restarter tags with restarters.
+    ;; Table associating restarter tags with restarters. If there
+    ;; are multiple restarters with the same tag, the first (by
+    ;; index in *restarters*) takes priority.
     (define restarters-by-tag
-      (map (lambda (r) `(,(restarter-tag r) . ,r))
-           restarters))
+      (let ((table (make-eqv-hashtable (length restarters))))
+        (for-each (lambda (r)
+                    (hashtable-update! table
+                                       (restarter-tag r)
+                                       (lambda (t) (or t r))
+                                       #f))
+                  restarters)
+        table))
 
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
@@ -109,10 +117,9 @@
                             (retry)))
            (assert (pair? choice))
            ;; Lookup restarter by tag.
-           (cond ((assv (car choice) restarters-by-tag) =>
-                  (lambda (p)
-                    (let ((r (cdr p))
-                          (vals (map (lambda (e)
+           (cond ((hashtable-ref restarters-by-tag (car choice) #f) =>
+                  (lambda (r)
+                    (let ((vals (map (lambda (e)
                                        (eval e (environment
                                                 '(rnrs))))
                                      (cdr choice))))
@@ -122,7 +129,8 @@
                               choice)))))))
 
     (display "Restartable exception occurred.\n")
-    (show-restarters restarters)
+    (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
+      (show-restarters (vector->list urs)))
     (let loop ()  ; prompt loop
       (display "restart [")
       (display level)
