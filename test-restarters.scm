@@ -83,6 +83,22 @@
      (((return-values . vs) "Return vs." vs))
      (error 'no-one "something happen!")))))
 
+;; Ensure that the (lexically) most recently installed restarter
+;; takes priority when there are duplicate tags.
+(test-equal "restarter-guard 3: duplicate tags"
+ 7
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use con 3))
+  (lambda ()
+    (restarter-guard whole-expr (((use x)
+                                  ""
+                                  x))
+      (+ 4
+         (restarter-guard guard2 (((use x)
+                                   ""
+                                   x))
+           (/ 2 0)))))))
+
 (test-assert "define-restartable 1"
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con #t))
