@@ -214,6 +214,22 @@ It has five fields:</p>
   <var>formals</var>.</dd>
 </dl>
 
+<p>The restarter condition type could be defined by</p>
+
+<pre class="example"><code>(define-condition-type &amp;restarter &amp;condition
+  make-restarter restarter?
+  (tag restarter-tag)
+  (description restarter-description)
+  (who restarter-who)
+  (formals restarter-formals)
+  (invoker restarter-invoker))</code></pre>
+
+<p>A restarter must not have the condition types <code>&amp;who</code>
+or <code>&amp;message</code>. A restarter’s tag, who, description, and
+formals are specific to that restarter, and should be preserved if
+the restarter is compounded with other condition objects and later
+extracted.</p>
+
 <p>Restarters are usually constructed
 on the fly and <dfn>established</dfn>: an exception handler is
 installed that makes all currently established restarters available
@@ -232,7 +248,8 @@ object raised by the triggering exception as one of its components.</p>
 <var>who</var> <var>formals</var> <var>invoker</var><code>)</code> →
 <span class="type-meta">restarter</span></p>
 
-<p>Returns a restarter with the specified fields. The arguments of
+<p>Returns a restarter condition with the specified fields.
+The arguments of
 <code>make-restarter</code> must conform to the above specification
 of restarter fields. In particular, the <var>invoker</var> procedure
 must not return to its caller.</p>
@@ -307,8 +324,14 @@ or a compound condition with
 one or more restarter components, then the interactor presents
 these restarters to the user. The information presented should include
 the tag, description, and formals of each restarter. The user
-then selects a restarter and provides any additional data which that
+then selects a restarter by tag and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
+
+<p>Since a restarter’s tag is its name for the purpose of selection,
+an interactor must not present the user with multiple restarters
+having the same tag. If a raised compound condition has restarter
+components with the same tag, then the first such component (in the
+order given by <code>simple-conditions</code>) takes priority.</p>
 
 <p>The precise manner of interaction is unspecified. An interactor
 may present the available restarters through a graphical menu, a
@@ -368,20 +391,23 @@ appears in more than one clause.</p>
 <p>Installs a new exception handler for the dynamic extent (as
 determined by <code>dynamic-wind</code>) of the invocation of
 <var class="syn">body</var>. If an exception occurs, this handler
-constructs a restarter condition from the raised condition and from
+constructs a compound restarter condition, which includes the condition
+raised by the triggering exception and
 restarters constructed from the <var class="syn">restarter-clauses</var>,
 and raises it with <code>raise-continuable</code>. If
 <var class="syn">condition-var</var> is provided, then the condition
 object raised by the original triggering exception is bound to it in
-the environment of this handler.</p>
+the environment of the handler.</p>
 
 <p>The who field of each restarter constructed from
-<var class="syn">restarter-clauses</var> is filled by
+<var class="syn">restarter-clauses</var> is initialized to
 <var class="syn">who</var>, or <code>#f</code> if
 <var class="syn">who</var> was omitted. Each invoker is constructed
 from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
-to the continuation of the <code>restarter-guard</code> form.</p>
+to the continuation of the <code>restarter-guard</code> form. The
+restarter must preserve all of the components of the condition raised
+by the triggering exception.</p>
 
 <h5>Example:</h5>
 
