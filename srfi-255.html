@@ -224,12 +224,13 @@ It has five fields:</p>
   (formals restarter-formals)
   (invoker restarter-invoker))</code></pre>
 
-<p>A simple restarter condition object must not have the condition
-types <code>&amp;who</code>
-or <code>&amp;message</code>. A restarter’s tag, who, description, and
+<p>A restarter’s tag, who, description, and
 formals are specific to that restarter, and should be preserved if
 the restarter is compounded with other condition objects and later
-extracted.</p>
+extracted. Therefore compound conditions must not be used to implement
+these informational fields. In particular, a restarter constructed by
+<code>make-restarter</code> (see below) must not have the condition
+types <code>&amp;who</code> or <code>&amp;message</code>.</p>
 
 <p>Restarters are usually constructed
 on the fly and <dfn>established</dfn>: an exception handler is
@@ -254,6 +255,10 @@ The arguments of
 <code>make-restarter</code> must conform to the above specification
 of restarter fields. In particular, the <var>invoker</var> procedure
 must not return to its caller.</p>
+
+<p>The condition returned by <code>make-restarter</code> must not have
+the condition types <code>&amp;who</code> or
+<code>&amp;message</code>.</p>
 
 <h5>Example:</h5>
 
