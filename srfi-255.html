@@ -360,9 +360,6 @@ in user code.</p>
 
 <h3 id="syntax">Syntax</h3>
 
-<p><code>(restarter-guard</code> <var class="syn">restarter-clauses</var>
-<var class="syn">body</var><code>)</code></p>
-
 <p><code>(restarter-guard</code> <var class="syn">who</var>
 <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
@@ -383,7 +380,7 @@ either</p>
   <var class="syn">description</var>
   <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
 
-<p><var class="syn">who</var> should be an identifier or string.
+<p><var class="syn">who</var> must be an identifier or string.
 <var class="syn">condition-var</var> and <var class="syn">tag</var>
 tag are identifiers. <var class="syn">formals</var> is a formals list
 as specified in Section 4.1.4 of the <cite>R7RS</cite>.
@@ -407,8 +404,8 @@ the environment of the handler.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
-<var class="syn">who</var>, or <code>#f</code> if
-<var class="syn">who</var> was omitted. Each invoker is constructed
+<var class="syn">who</var>.
+Each invoker is constructed
 from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
 to the continuation of the <code>restarter-guard</code> form. The
