@@ -14,6 +14,10 @@ case "$1" in
   chez)
         scheme --libdirs "$CHEZSCHEMELIBDIRS:." test-restarters.scm
         ;;
+  guile)
+        ./make-guile-hierarchy.sh
+        guile -L . --fresh-auto-compile -l test-restarters.scm
+        ;;
   -h|--help)
         usage
         ;;
