@@ -164,13 +164,13 @@
           (syntax-violation who "invalid syntax" form)))
 
       (syntax-case syn ()
-        ((_ (x ...) body ...)
-         (syntax (restarter-guard #f (x ...) body ...)))
-        ((_ who (c1 c2 ...) body ...)
+        ((_ (x ...) body1 body2 ...)
+         (syntax (restarter-guard #f (x ...) body1 body2 ...)))
+        ((_ who (c1 c2 ...) body1 body2 ...)
          (not (identifier? #'c1))
-         (syntax (restarter-guard who (con c1 c2 ...) body ...)))
+         (syntax (restarter-guard who (con c1 c2 ...) body1 body2 ...)))
         ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
-           body ...)
+           body1 body2 ...)
          (begin
           (check-syntax (identifier? #'con) 'restarter-guard #'con)
           (check-syntax (all-ids? #'(tag ...))
@@ -199,7 +199,7 @@
                       ;; we can't just apply k to (lambda () body ...).
                       ;; Instead, we have a little dance to do.
                       (call-with-values
-                       (lambda () body ...)
+                       (lambda () body1 body2 ...)
                        (lambda vals
                          (k (lambda ()
                               (apply values vals))))))))))))))))))
