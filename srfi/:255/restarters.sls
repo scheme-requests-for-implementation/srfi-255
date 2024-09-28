@@ -158,6 +158,11 @@
 
   (define-syntax restarter-guard
     (lambda (syn)
+      ;; Raise a syntax violation if *bool* is false.
+      (define (check-syntax bool who form)
+        (unless bool
+          (syntax-violation who "invalid syntax" form)))
+
       (syntax-case syn ()
         ((_ (x ...) body ...)
          (syntax (restarter-guard #f (x ...) body ...)))
@@ -166,8 +171,12 @@
          (syntax (restarter-guard who (con c1 c2 ...) body ...)))
         ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
            body ...)
-         (and (identifier? #'con) (all-ids? #'(tag ...)))
          (begin
+          (check-syntax (identifier? #'con) 'restarter-guard #'con)
+          (check-syntax (all-ids? #'(tag ...))
+                        'restarter-guard
+                        #'(tag ...))
+          (check-syntax (not (pair? #'who)) 'restarter-guard #'who)
           (check-unique-ids 'restarter-guard syn (syntax (tag ...)))
           (with-syntax (((r ...) (generate-temporaries #'(tag ...))))
             (syntax
@@ -197,6 +206,10 @@
 
   (define-syntax restartable
     (syntax-rules ()
+     ((_ (x ...) . _)
+      (syntax-violation 'restartable
+                        "who must be an identifier or string"
+                        '(x ...)))
      ((_ who (lambda formals body1 body2 ...))
       (letrec* ((proc (lambda formals body1 body2 ...))
                 (restartable-proc
@@ -227,10 +240,8 @@
 
   (define-syntax define-restartable
     (syntax-rules ()
-      ((_ ((x) . rest) _ ...)
-       (syntax-violation 'restartable
-                         "invalid syntax"
-                         (define ((x) . rest))))
+      ((_ ((x ...) . _) . _)
+       (syntax-violation 'define-restartable "invalid syntax" '(x ...)))
       ((_ (name . formals) body1 body2 ...)
        (define name
          (let ((proc (lambda formals body1 body2 ...)))
