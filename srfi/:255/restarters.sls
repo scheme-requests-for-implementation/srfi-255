@@ -197,6 +197,17 @@
 
   (define-syntax restartable
     (syntax-rules ()
+     ((_ who (lambda formals body1 body2 ...))
+      (letrec* ((proc (lambda formals body1 body2 ...))
+                (restartable-proc
+                 (lambda formals
+                   (restarter-guard
+                     who
+                     (((use-arguments . formals)
+                       "Apply procedure to new arguments."
+                       (make-application restartable-proc formals)))
+                     (make-application proc formals)))))
+        restartable-proc))
      ((_ who expr)
        (letrec*
         ((proc expr)
@@ -220,25 +231,22 @@
        (syntax-violation 'restartable
                          "invalid syntax"
                          (define ((x) . rest))))
-      ((_ (name arg ...) body1 body2 ...)
+      ((_ (name . formals) body1 body2 ...)
        (define name
-         (let ((proc (lambda (arg ...) body1 body2 ...)))
-           (lambda (arg ...)
+         (let ((proc (lambda formals body1 body2 ...)))
+           (lambda formals
              (restarter-guard name
-                              (((use-arguments arg ...)
+                              (((use-arguments . formals)
                                 "Apply procedure to new arguments."
-                                (name arg ...)))
-               (proc arg ...))))))
-      ((_ (name . args) body1 body2 ...)
-       (define name
-         (let ((proc (lambda args body1 body2 ...)))
-           (lambda args
-             (restarter-guard name
-                              (((use-arguments . args)
-                                "Apply procedure to new arguments."
-                                (apply name args)))
-               (apply proc args))))))
+                                (make-application name formals)))
+               (make-application proc formals))))))
       ((_ name expr)
        (define name (restartable name expr)))))
 
+  ;; Helper for restartable and define-restartable.
+  (define-syntax make-application
+    (syntax-rules ()
+      ((_ proc (x ...)) (proc x ...))
+      ((_ proc (x1 ... xK . rest)) (apply proc x1 ... xK rest))
+      ((_ proc var) (apply proc var))))
   )
