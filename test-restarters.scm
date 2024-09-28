@@ -131,6 +131,17 @@
             x)))
     (f #f))))
 
+(test-equal "define-restartable 4 (polyvariadic)"
+ '(1 (2))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    (define-restartable (f x . rest)
+      (if (null? rest)
+          (error 'f "empty rest parameter")
+          (list x rest)))
+    (f 1))))
+
 (test-equal "restartable 1"
  '(2 3 4 5)
  (with-exception-handler
@@ -141,6 +152,29 @@
           (lambda (x)
 	    (if x (+ x 1) (error 'no-one "false"))))
 	 '(1 2 #f 4)))))
+
+(test-equal "restartable 2 (variadic)"
+ '(1 2)
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    ((restartable "test"
+                  (lambda xs
+                    (if (null? xs)
+                        (error 'test "empty")
+                        xs)))))))
+
+(test-equal "restartable 3 (polyvariadic)"
+ '(1 (2))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    ((restartable "test"
+                  (lambda (x . rest)
+                    (if (null? rest)
+                        (error 'test "empty")
+                        (list x rest))))
+     0))))
 
 (test-end)
 
