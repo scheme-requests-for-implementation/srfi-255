@@ -18,6 +18,44 @@
                "no restarter found with this tag"
                tag restarters))))
 
+;;; Test runner
+
+;; The SRFI 64 implementation used by most Schemes has a very basic
+;; default test runner. This is slightly more helpful on failures.
+
+(define (my-test-runner-factory)
+  (let ((runner (test-runner-null)))
+
+    (define (test-end runner)
+      (case (test-result-kind runner)
+        ((pass)
+         (display "Pass: ")
+         (display (test-runner-test-name runner))
+         (newline))
+        ((fail)
+         (display "FAIL: ")
+         (display (test-runner-test-name runner))
+         (display ". Expected ")
+         (display (test-result-ref runner 'expected-value))
+         (display ", got ")
+         (display (test-result-ref runner 'actual))
+         (display ".\n"))))
+
+    (define (test-final runner)
+      (display "===============================\n")
+      (display "Total passes: ")
+      (display (test-runner-pass-count runner))
+      (newline)
+      (display "Total failures: ")
+      (display (test-runner-fail-count runner))
+      (newline))
+
+    (test-runner-on-test-end! runner test-end)
+    (test-runner-on-final! runner test-final)
+    runner))
+
+(test-runner-factory my-test-runner-factory)
+
 ;;; Tests
 
 (test-begin "Restarters")
