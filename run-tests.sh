@@ -25,7 +25,7 @@ case "$1" in
         ;;
   guile)
         check_guile_files
-        guile -L . --fresh-auto-compile -l tests/test-guile.scm
+        guile -L . --no-auto-compile -l tests/test-guile.scm
         ;;
   -h|--help)
         usage
