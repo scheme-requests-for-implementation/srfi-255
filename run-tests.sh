@@ -21,11 +21,11 @@ check_guile_files () {
 
 case "$1" in
   chez)
-        scheme --libdirs "$CHEZSCHEMELIBDIRS:." test-restarters.scm
+        scheme --libdirs "$CHEZSCHEMELIBDIRS:." tests/test-chez.scm
         ;;
   guile)
         check_guile_files
-        guile -L . --fresh-auto-compile -l test-restarters.scm
+        guile -L . --fresh-auto-compile -l tests/test-guile.scm
         ;;
   -h|--help)
         usage

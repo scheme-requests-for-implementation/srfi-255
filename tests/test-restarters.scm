@@ -1,10 +1,6 @@
 ;;; SPDX-FileCopyrightText: 2024 Wolfgang Corcoran-Mathe, Marc Nieper-Wißkirchen
 ;;; SPDX-License-Identifier: MIT
 
-(import (rnrs)
-        (srfi :64)
-        (srfi :255))
-
 ;; Invoke the restarter with tag *tag* on the args, if
 ;; such a restarter is a component of *con*.
 (define (restart/tag tag con . args)
