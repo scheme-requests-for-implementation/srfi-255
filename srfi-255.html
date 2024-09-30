@@ -116,15 +116,31 @@ which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
 
-<p>Should we provide <code>make-restarter</code>? Hand-crafted
-restarters aren’t guaranteed to honor the “no return” contract.</p>
-
 <p>Should <code>restarter-guard</code> provide a way to
 control which kinds of conditions can be restarted? Currently,
 <code>restarter-guard</code> is specified to restart any exception
 that occurs.</p>
 
-<p>Should the evaluation environment of an interactor be specified?</p>
+<p>Should we specify that restarters are identified by their tags, and
+how an implementation should handle restarters with identical tags?
+Consider this example:</p>
+
+<pre class="example"><code>(restarter-guard map
+  (((use xs) "Return xs." xs))
+  (map (lambda (x)
+         (restarter-guard reciprocal
+           (((use y) "Return y." y))
+           (/ x)))
+       '(0 1 2)))</code></pre>
+
+<p>When <code>(/ 0)</code> is evaluated, two restarters, both tagged
+<code>use</code>, are raised. An implementation could handle this
+situation in several ways. It might give the “nearest” (i.e. to the
+exception) restarter, in this case <code>reciprocal</code>, priority
+and ignore the “outer” restarter. Alternatively, an interactor might
+prompt the user to disambiguate their choose by providing a who field.
+(This is not a general solution, however, since the who fields might
+also be the same.)</p>
 
 <h2 id="rationale">Rationale</h2>
 
