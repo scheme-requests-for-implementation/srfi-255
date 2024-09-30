@@ -376,14 +376,14 @@ either</p>
 
 <pre><code>(((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+  <var class="syn">body</var><code>) …)</code></pre>
 
 <p>or</p>
 
 <pre><code>(</code><var class="syn">condition-var</var>
  <code>((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+  <var class="syn">body</var><code>) …)</code></pre>
 
 <p><var class="syn">who</var> must be an identifier or string.
 <var class="syn">condition-var</var> and <var class="syn">tag</var>
@@ -405,7 +405,7 @@ restarters constructed from the <var class="syn">restarter-clauses</var>,
 and raises it with <code>raise-continuable</code>. If
 <var class="syn">condition-var</var> is provided, then the condition
 object raised by the original triggering exception is bound to it in
-the environment of the handler.</p>
+each <var class="syn">body</var>.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
