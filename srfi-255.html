@@ -325,14 +325,8 @@ or a compound condition with
 one or more restarter components, then the interactor presents
 these restarters to the user. The information presented should include
 the tag, description, and formals of each restarter. The user
-then selects a restarter by tag and provides any additional data which that
+then selects a restarter and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
-
-<p>Since a restarter’s tag is its name for the purpose of selection,
-an interactor must not present the user with multiple restarters
-having the same tag. If a raised compound condition has restarter
-components with the same tag, then the first such component (in the
-order given by <code>simple-conditions</code>) takes priority.</p>
 
 <p>The precise manner of interaction is unspecified. An interactor
 may present the available restarters through a graphical menu, a
