@@ -10,9 +10,22 @@ usage () {
 
 test $# -ne 1 && usage
 
+check_guile_files () {
+        if ! test -r srfi/srfi-255.scm || ! test -d srfi/srfi-255
+        then
+                echo "Can't find Guile-friendly library hierarchy."
+                echo "Please run make-guile-hierarchy and try again."
+                exit 1
+        fi
+}
+
 case "$1" in
   chez)
-        scheme --libdirs "$CHEZSCHEMELIBDIRS:." test-restarters.scm
+        scheme --libdirs "$CHEZSCHEMELIBDIRS:." tests/test-chez.scm
+        ;;
+  guile)
+        check_guile_files
+        guile -L . --no-auto-compile -l tests/test-guile.scm
         ;;
   -h|--help)
         usage

@@ -84,19 +84,25 @@
                    (lambda (retry)
                      (interact restarters level abort retry)))
                      (loop)))))
-          (if (non-continuable-violation? obj)
-              (raise obj)
-              (raise-continuable obj)))))
+          (raise-continuable obj))))
 
   (define default-interactor (make-default-interactor 0))
 
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.
   (define (interact restarters level abort retry)
-    ;; Alist associating restarter tags with restarters.
+    ;; Table associating restarter tags with restarters. If there
+    ;; are multiple restarters with the same tag, the first (by
+    ;; index in *restarters*) takes priority.
     (define restarters-by-tag
-      (map (lambda (r) `(,(restarter-tag r) . ,r))
-           restarters))
+      (let ((table (make-eqv-hashtable (length restarters))))
+        (for-each (lambda (r)
+                    (hashtable-update! table
+                                       (restarter-tag r)
+                                       (lambda (t) (or t r))
+                                       #f))
+                  restarters)
+        table))
 
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
@@ -111,10 +117,9 @@
                             (retry)))
            (assert (pair? choice))
            ;; Lookup restarter by tag.
-           (cond ((assv (car choice) restarters-by-tag) =>
-                  (lambda (p)
-                    (let ((r (cdr p))
-                          (vals (map (lambda (e)
+           (cond ((hashtable-ref restarters-by-tag (car choice) #f) =>
+                  (lambda (r)
+                    (let ((vals (map (lambda (e)
                                        (eval e (environment
                                                 '(rnrs))))
                                      (cdr choice))))
@@ -124,7 +129,8 @@
                               choice)))))))
 
     (display "Restartable exception occurred.\n")
-    (show-restarters restarters)
+    (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
+      (show-restarters (vector->list urs)))
     (let loop ()  ; prompt loop
       (display "restart [")
       (display level)
@@ -152,16 +158,25 @@
 
   (define-syntax restarter-guard
     (lambda (syn)
+      ;; Raise a syntax violation if *bool* is false.
+      (define (check-syntax bool who form)
+        (unless bool
+          (syntax-violation who "invalid syntax" form)))
+
       (syntax-case syn ()
-        ((_ (x ...) body ...)
-         (syntax (restarter-guard #f (x ...) body ...)))
-        ((_ who (c1 c2 ...) body ...)
+        ((_ (x ...) body1 body2 ...)
+         (syntax (restarter-guard #f (x ...) body1 body2 ...)))
+        ((_ who (c1 c2 ...) body1 body2 ...)
          (not (identifier? #'c1))
-         (syntax (restarter-guard who (con c1 c2 ...) body ...)))
+         (syntax (restarter-guard who (con c1 c2 ...) body1 body2 ...)))
         ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
-           body ...)
-         (and (identifier? #'con) (all-ids? #'(tag ...)))
+           body1 body2 ...)
          (begin
+          (check-syntax (identifier? #'con) 'restarter-guard #'con)
+          (check-syntax (all-ids? #'(tag ...))
+                        'restarter-guard
+                        #'(tag ...))
+          (check-syntax (not (pair? #'who)) 'restarter-guard #'who)
           (check-unique-ids 'restarter-guard syn (syntax (tag ...)))
           (with-syntax (((r ...) (generate-temporaries #'(tag ...))))
             (syntax
@@ -184,13 +199,28 @@
                       ;; we can't just apply k to (lambda () body ...).
                       ;; Instead, we have a little dance to do.
                       (call-with-values
-                       (lambda () body ...)
+                       (lambda () body1 body2 ...)
                        (lambda vals
                          (k (lambda ()
                               (apply values vals))))))))))))))))))
 
   (define-syntax restartable
     (syntax-rules ()
+     ((_ (x ...) . _)
+      (syntax-violation 'restartable
+                        "who must be an identifier or string"
+                        '(x ...)))
+     ((_ who (lambda formals body1 body2 ...))
+      (letrec* ((proc (lambda formals body1 body2 ...))
+                (restartable-proc
+                 (lambda formals
+                   (restarter-guard
+                     who
+                     (((use-arguments . formals)
+                       "Apply procedure to new arguments."
+                       (make-application restartable-proc formals)))
+                     (make-application proc formals)))))
+        restartable-proc))
      ((_ who expr)
        (letrec*
         ((proc expr)
@@ -210,29 +240,24 @@
 
   (define-syntax define-restartable
     (syntax-rules ()
-      ((_ ((x) . rest) _ ...)
-       (syntax-violation 'restartable
-                         "invalid syntax"
-                         (define ((x) . rest))))
-      ((_ (name arg ...) body1 body2 ...)
+      ((_ ((x ...) . _) . _)
+       (syntax-violation 'define-restartable "invalid syntax" '(x ...)))
+      ((_ (name . formals) body1 body2 ...)
        (define name
-         (let ((proc (lambda (arg ...) body1 body2 ...)))
-           (lambda (arg ...)
+         (let ((proc (lambda formals body1 body2 ...)))
+           (lambda formals
              (restarter-guard name
-                              (((use-arguments arg ...)
+                              (((use-arguments . formals)
                                 "Apply procedure to new arguments."
-                                (name arg ...)))
-               (proc arg ...))))))
-      ((_ (name . args) body1 body2 ...)
-       (define name
-         (let ((proc (lambda args body1 body2 ...)))
-           (lambda args
-             (restarter-guard name
-                              (((use-arguments . args)
-                                "Apply procedure to new arguments."
-                                (apply name args)))
-               (apply proc args))))))
+                                (make-application name formals)))
+               (make-application proc formals))))))
       ((_ name expr)
        (define name (restartable name expr)))))
 
+  ;; Helper for restartable and define-restartable.
+  (define-syntax make-application
+    (syntax-rules ()
+      ((_ proc (x ...)) (proc x ...))
+      ((_ proc (x1 ... xK . rest)) (apply proc x1 ... xK rest))
+      ((_ proc var) (apply proc var))))
   )

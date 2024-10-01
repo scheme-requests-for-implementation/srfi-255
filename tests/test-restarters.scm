@@ -1,10 +1,6 @@
 ;;; SPDX-FileCopyrightText: 2024 Wolfgang Corcoran-Mathe, Marc Nieper-Wißkirchen
 ;;; SPDX-License-Identifier: MIT
 
-(import (rnrs)
-        (srfi :64)
-        (srfi :255))
-
 ;; Invoke the restarter with tag *tag* on the args, if
 ;; such a restarter is a component of *con*.
 (define (restart/tag tag con . args)
@@ -17,6 +13,44 @@
         (error 'restart/tag
                "no restarter found with this tag"
                tag restarters))))
+
+;;; Test runner
+
+;; The SRFI 64 implementation used by most Schemes has a very basic
+;; default test runner. This is slightly more helpful on failures.
+
+(define (my-test-runner-factory)
+  (let ((runner (test-runner-null)))
+
+    (define (test-end runner)
+      (case (test-result-kind runner)
+        ((pass)
+         (display "Pass: ")
+         (display (test-runner-test-name runner))
+         (newline))
+        ((fail)
+         (display "FAIL: ")
+         (display (test-runner-test-name runner))
+         (display ". Expected ")
+         (display (test-result-ref runner 'expected-value))
+         (display ", got ")
+         (display (test-result-ref runner 'actual))
+         (display ".\n"))))
+
+    (define (test-final runner)
+      (display "===============================\n")
+      (display "Total passes: ")
+      (display (test-runner-pass-count runner))
+      (newline)
+      (display "Total failures: ")
+      (display (test-runner-fail-count runner))
+      (newline))
+
+    (test-runner-on-test-end! runner test-end)
+    (test-runner-on-final! runner test-final)
+    runner))
+
+(test-runner-factory my-test-runner-factory)
 
 ;;; Tests
 
@@ -83,6 +117,22 @@
      (((return-values . vs) "Return vs." vs))
      (error 'no-one "something happen!")))))
 
+;; Ensure that the (lexically) most recently installed restarter
+;; takes priority when there are duplicate tags.
+(test-equal "restarter-guard 3: duplicate tags"
+ 7
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use con 3))
+  (lambda ()
+    (restarter-guard whole-expr (((use x)
+                                  ""
+                                  x))
+      (+ 4
+         (restarter-guard guard2 (((use x)
+                                   ""
+                                   x))
+           (/ 2 0)))))))
+
 (test-assert "define-restartable 1"
  (with-exception-handler
   (lambda (con) (restart/tag 'use-arguments con #t))
@@ -115,6 +165,17 @@
             x)))
     (f #f))))
 
+(test-equal "define-restartable 4 (polyvariadic)"
+ '(1 (2))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    (define-restartable (f x . rest)
+      (if (null? rest)
+          (error 'f "empty rest parameter")
+          (list x rest)))
+    (f 1))))
+
 (test-equal "restartable 1"
  '(2 3 4 5)
  (with-exception-handler
@@ -125,6 +186,29 @@
           (lambda (x)
 	    (if x (+ x 1) (error 'no-one "false"))))
 	 '(1 2 #f 4)))))
+
+(test-equal "restartable 2 (variadic)"
+ '(1 2)
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    ((restartable "test"
+                  (lambda xs
+                    (if (null? xs)
+                        (error 'test "empty")
+                        xs)))))))
+
+(test-equal "restartable 3 (polyvariadic)"
+ '(1 (2))
+ (with-exception-handler
+  (lambda (con) (restart/tag 'use-arguments con 1 2))
+  (lambda ()
+    ((restartable "test"
+                  (lambda (x . rest)
+                    (if (null? rest)
+                        (error 'test "empty")
+                        (list x rest))))
+     0))))
 
 (test-end)
 

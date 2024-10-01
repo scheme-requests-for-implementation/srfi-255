@@ -116,15 +116,31 @@ which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
 
-<p>Should we provide <code>make-restarter</code>? Hand-crafted
-restarters aren’t guaranteed to honor the “no return” contract.</p>
-
 <p>Should <code>restarter-guard</code> provide a way to
 control which kinds of conditions can be restarted? Currently,
 <code>restarter-guard</code> is specified to restart any exception
 that occurs.</p>
 
-<p>Should the evaluation environment of an interactor be specified?</p>
+<p>Should we specify that restarters are identified by their tags, and
+how an implementation should handle restarters with identical tags?
+Consider this example:</p>
+
+<pre class="example"><code>(restarter-guard map
+  (((use xs) "Return xs." xs))
+  (map (lambda (x)
+         (restarter-guard reciprocal
+           (((use y) "Return y." y))
+           (/ x)))
+       '(0 1 2)))</code></pre>
+
+<p>When <code>(/ 0)</code> is evaluated, two restarters, both tagged
+<code>use</code>, are raised. An implementation could handle this
+situation in several ways. It might give the “nearest” (i.e. to the
+exception) restarter, in this case <code>reciprocal</code>, priority
+and ignore the “outer” restarter. Alternatively, an interactor might
+prompt the user to disambiguate their choose by providing a who field.
+(This is not a general solution, however, since the who fields might
+also be the same.)</p>
 
 <h2 id="rationale">Rationale</h2>
 
@@ -214,10 +230,23 @@ It has five fields:</p>
   <var>formals</var>.</dd>
 </dl>
 
-<p>Restarters are usually constructed
-on the fly and <dfn>established</dfn>: an exception handler is
-installed that makes all currently established restarters available
-whenever an exception is raised.</p>
+<p>The restarter condition type could be defined by</p>
+
+<pre class="example"><code>(define-condition-type &amp;restarter &amp;condition
+  make-restarter restarter?
+  (tag restarter-tag)
+  (description restarter-description)
+  (who restarter-who)
+  (formals restarter-formals)
+  (invoker restarter-invoker))</code></pre>
+
+<p>A restarter’s fields
+are specific to that restarter, and must be preserved if
+the restarter is compounded with other condition objects and later
+extracted. Therefore compound conditions must not be used to implement
+these informational fields. In particular, a restarter constructed by
+<code>make-restarter</code> (see below) must not have the condition
+types <code>&amp;who</code> or <code>&amp;message</code>.</p>
 
 <p>When a restarter is raised in response to an exception (called the
 <dfn>triggering exception</dfn> in this document), it should be a
@@ -232,10 +261,15 @@ object raised by the triggering exception as one of its components.</p>
 <var>who</var> <var>formals</var> <var>invoker</var><code>)</code> →
 <span class="type-meta">restarter</span></p>
 
-<p>Returns a restarter with the specified fields. The arguments of
+<p>Returns a restarter condition with the specified fields.
+The arguments of
 <code>make-restarter</code> must conform to the above specification
 of restarter fields. In particular, the <var>invoker</var> procedure
 must not return to its caller.</p>
+
+<p>The condition returned by <code>make-restarter</code> must not have
+the condition types <code>&amp;who</code> or
+<code>&amp;message</code>.</p>
 
 <h5>Example:</h5>
 
@@ -331,9 +365,6 @@ in user code.</p>
 
 <h3 id="syntax">Syntax</h3>
 
-<p><code>(restarter-guard</code> <var class="syn">restarter-clauses</var>
-<var class="syn">body</var><code>)</code></p>
-
 <p><code>(restarter-guard</code> <var class="syn">who</var>
 <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
@@ -345,22 +376,22 @@ either</p>
 
 <pre><code>(((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+  <var class="syn">body</var><code>) …)</code></pre>
 
 <p>or</p>
 
 <pre><code>(</code><var class="syn">condition-var</var>
  <code>((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">expression1</var> <var class="syn">expression2</var> …<code>) …)</code></pre>
+  <var class="syn">body</var><code>) …)</code></pre>
 
-<p><var class="syn">who</var> should be an identifier or string.
+<p><var class="syn">who</var> must be an identifier or string.
 <var class="syn">condition-var</var> and <var class="syn">tag</var>
-tag are identifiers. <var class="syn">formals</var> is a formals list
+are identifiers. <var class="syn">formals</var> is a formals list
 as specified in Section 4.1.4 of the <cite>R7RS</cite>.
 <var class="syn">description</var> is a string.</p>
 
-<p>A syntax error is signalled if any <var class="syn">tag</var>
+<p>A syntax error is signaled if any <var class="syn">tag</var>
 appears in more than one clause.</p>
 
 <h5>Semantics:</h5>
@@ -368,20 +399,23 @@ appears in more than one clause.</p>
 <p>Installs a new exception handler for the dynamic extent (as
 determined by <code>dynamic-wind</code>) of the invocation of
 <var class="syn">body</var>. If an exception occurs, this handler
-constructs a restarter condition from the raised condition and from
+constructs a compound restarter condition, which includes the condition
+raised by the triggering exception and
 restarters constructed from the <var class="syn">restarter-clauses</var>,
 and raises it with <code>raise-continuable</code>. If
 <var class="syn">condition-var</var> is provided, then the condition
 object raised by the original triggering exception is bound to it in
-the environment of this handler.</p>
+each <var class="syn">body</var>.</p>
 
 <p>The who field of each restarter constructed from
-<var class="syn">restarter-clauses</var> is filled by
-<var class="syn">who</var>, or <code>#f</code> if
-<var class="syn">who</var> was omitted. Each invoker is constructed
+<var class="syn">restarter-clauses</var> is initialized to
+<var class="syn">who</var>.
+Each invoker is constructed
 from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
-to the continuation of the <code>restarter-guard</code> form.</p>
+to the continuation of the <code>restarter-guard</code> form. The
+restarter must preserve all of the components of the condition raised
+by the triggering exception.</p>
 
 <h5>Example:</h5>
 
@@ -578,7 +612,7 @@ when naming their restarters.</p>
   <dd>Retries the invocation of some procedure, using new arguments.
   The invoker of a <code>use-arguments</code> restarter accepts zero
   or more arguments. This is the tag protocol used by
-  <code>restartable</code>.</dd>
+  <code>restartable</code> and <code>define-restartable</code>.</dd>
 </dl>
 
 <!-- Implementation section -->
