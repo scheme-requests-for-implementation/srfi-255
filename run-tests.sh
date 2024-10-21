@@ -4,7 +4,8 @@
 # SPDX-License-Identifier: MIT
 
 usage () {
-        printf 'Usage: %s chez\n' "$(basename $0)" 1>&2
+        printf 'Usage: %s SCHEME-KEYWORD\n' "$(basename $0)" 1>&2
+        printf 'Supported SCHEME-KEYWORDs: chez, guile\n' 1>&2
         exit 1
 }
 
