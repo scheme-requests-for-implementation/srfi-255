@@ -31,6 +31,7 @@
           restarter-formals
           restarter-description
           restarter-invoker
+          restarter-condition-predicate
           restarter-who
           define-restartable
           restarter-guard
