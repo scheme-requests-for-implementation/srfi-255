@@ -139,7 +139,7 @@
   (lambda ()
     (define-restartable (f x)
       (if (not x)
-          (error 'f "false")
+          (assertion-violation 'f "false")
           x))
     (f #f))))
 
@@ -150,7 +150,7 @@
   (lambda ()
     (define-restartable (f . xs)
       (if (null? xs)
-          (error 'f "empty")
+          (assertion-violation 'f "empty")
           xs))
     (f))))
 
@@ -161,7 +161,7 @@
     (define-restartable f
       (lambda (x)
         (if (not x)
-            (error 'f "false")
+            (assertion-violation 'f "false")
             x)))
     (f #f))))
 
@@ -172,7 +172,7 @@
   (lambda ()
     (define-restartable (f x . rest)
       (if (null? rest)
-          (error 'f "empty rest parameter")
+          (assertion-violation 'f "empty rest parameter")
           (list x rest)))
     (f 1))))
 
@@ -184,7 +184,7 @@
     (map (restartable
           "anonymous"
           (lambda (x)
-	    (if x (+ x 1) (error 'no-one "false"))))
+	    (if x (+ x 1) (assertion-violation 'no-one "false"))))
 	 '(1 2 #f 4)))))
 
 (test-equal "restartable 2 (variadic)"
@@ -195,7 +195,7 @@
     ((restartable "test"
                   (lambda xs
                     (if (null? xs)
-                        (error 'test "empty")
+                        (assertion-violation 'test "empty")
                         xs)))))))
 
 (test-equal "restartable 3 (polyvariadic)"
@@ -206,7 +206,7 @@
     ((restartable "test"
                   (lambda (x . rest)
                     (if (null? rest)
-                        (error 'test "empty")
+                        (assertion-violation 'test "empty")
                         (list x rest))))
      0))))
 
