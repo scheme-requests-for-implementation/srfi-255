@@ -205,7 +205,7 @@
                               (apply values vals))))))))))))))))))
 
   (define-syntax restartable
-    (syntax-rules ()
+    (syntax-rules (lambda)
      ((_ (x ...) . _)
       (syntax-violation 'restartable
                         "who must be an identifier or string"
