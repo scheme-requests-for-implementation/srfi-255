@@ -225,6 +225,11 @@ It has five fields:</p>
   4.1.4 of <cite>R7RS Small</cite>, describing the arguments expected by the
   restarter’s <var>invoker</var>.</dd>
 
+  <dt id="condition-predicate">condition-predicate</dt>
+  <dd>A procedure which returns true when applied to a condition object
+  <var>c</var> when the restarter can be used to restart the computation
+  that raised <var>c</var>. Otherwise, it returns <code>#f</code>.</dd>
+
   <dt>invoker</dt>
   <dd>A procedure that actually performs the recovery. It must not
   return. The number of arguments it expects is given by
@@ -239,6 +244,7 @@ It has five fields:</p>
   (description restarter-description)
   (who restarter-who)
   (formals restarter-formals)
+  (condition-predicate restarter-condition-predicate)
   (invoker restarter-invoker))</code></pre>
 
 <p>A restarter’s fields
@@ -249,17 +255,32 @@ these informational fields. In particular, a restarter constructed by
 <code>make-restarter</code> (see below) must not have the condition
 types <code>&amp;who</code> or <code>&amp;message</code>.</p>
 
-<p>When a restarter is raised in response to an exception (called the
-<dfn>triggering exception</dfn> in this document), it should be a
-composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
-object raised by the triggering exception as one of its components.</p>
+<p>Usually, restarters and their handlers will be constructed
+implicitly by the high-level forms described in the
+<a href="#syntax">Syntax</a> section. Restarters and restarter handlers
+must obey the following protocol:</p>
+
+<ul>
+  <li>
+    <p>When a restarter is raised in response to an exception (called the
+    <dfn>triggering exception</dfn> in this document), it must be a
+    composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
+    object raised by the triggering exception as one of its components.</p>
+  </li>
+  <li>
+    <p>A handler must not invoke or re-raise a restarter if the object
+    raised by the triggering exception does not satisfy that restarter’s
+    condition predicate.</p>
+  </li>
+</ul>
 
 <!-- Procedures section -->
 
 <h3 id="procedures">Procedures</h3>
 
 <p><code>(make-restarter</code> <var>tag</var> <var>description</var>
-<var>who</var> <var>formals</var> <var>invoker</var><code>)</code> →
+<var>who</var> <var>formals</var> <var>condition-predicate</var>
+<var>invoker</var><code>)</code> →
 <span class="type-meta">restarter</span></p>
 
 <p>Returns a restarter condition with the specified fields.
@@ -282,11 +303,12 @@ the condition types <code>&amp;who</code> or
                             "Return x."
                             'safe-/
                             '(x)
+                            condition?
                             return-value)))
        (with-exception-handler
         (lambda (con)
           (raise-continuable
-           (if (condition? con)
+           (if ((restarter-condition-predicate val-restarter) con)
                (condition con val-restarter)
                con)))
         (lambda () (/ x y)))))))
@@ -315,6 +337,10 @@ restart[0]&gt; <samp>(return-value 4)</samp>
 
 <code>(restarter-who</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">symbol-or-string</span><br>
+
+<code>(restarter-condition-predicate</code>
+<var>restarter</var><code>)</code> →
+<span class="type-meta">procedure</span><br>
 
 <code>(restarter-formals</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">pair-or-symbol</span></p>
@@ -377,40 +403,52 @@ either</p>
 
 <pre><code>(((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">body</var><code>) …)</code></pre>
+  <var class="syn">pred-expression</var>
+  <var class="syn">restarter-body</var><code>) …)</code></pre>
 
 <p>or</p>
 
 <pre><code>(</code><var class="syn">condition-var</var>
  <code>((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
-  <var class="syn">body</var><code>) …)</code></pre>
+  <var class="syn">pred-expression</var>
+  <var class="syn">restarter-body</var><code>) …)</code></pre>
 
 <p><var class="syn">who</var> must be an identifier or string.
 <var class="syn">condition-var</var> and <var class="syn">tag</var>
 are identifiers. <var class="syn">formals</var> is a formals list
 as specified in Section 4.1.4 of the <cite>R7RS</cite>.
-<var class="syn">description</var> is a string.</p>
+<var class="syn">description</var> is a string.
+<var class="syn">pred-expression</var> is an expression that must
+evaluate to a predicate (<cite>R7RS</cite> §6.1).</p>
 
 <p>A syntax error is signaled if any <var class="syn">tag</var>
 appears in more than one clause.</p>
 
 <h5>Semantics:</h5>
 
-<p>Installs a new exception handler for the dynamic extent (as
+<p>First, the <var class="syn">pred-expression</var>s are evaluated
+to <a href="#condition-predicate">condition predicates</a> in an
+unspecified order. Then, an exception handler
+is installed for the dynamic extent (as
 determined by <code>dynamic-wind</code>) of the invocation of
 <var class="syn">body</var>. If an exception occurs, this handler
 constructs a compound restarter condition, which includes the condition
 raised by the triggering exception and
 restarters constructed from the <var class="syn">restarter-clauses</var>,
-and raises it with <code>raise-continuable</code>. If
+and raises it with <code>raise-continuable</code>. Only restarters
+whose condition predicates return true when applied to the raised
+condition are included.
+If
 <var class="syn">condition-var</var> is provided, then the condition
 object raised by the original triggering exception is bound to it in
-each <var class="syn">body</var>.</p>
+each <var class="syn">restarter-body</var>.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
-<var class="syn">who</var>.
+<var class="syn">who</var>, and
+the condition-predicate field to the value of
+<var class="syn">pred-expression</var>.
 Each invoker is constructed
 from the <var class="syn">expressions</var>; when it is invoked, the
 values of the final <var class="syn">expression</var> are delivered
@@ -429,12 +467,15 @@ by the triggering exception.</p>
   (restarter-guard safe-/
     (con ((return-value v)
           "Return a specific value."
+          assertion-violation?
           v)
          ((return-numerator)
           "Return the numerator."
+          assertion-violation?
           a)
          ((return-zero)
           "Return zero."
+          assertion-violation?
           0))
     (/ a b)))
 

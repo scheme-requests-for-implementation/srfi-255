@@ -62,7 +62,7 @@
      (lambda (con) (restart/tag 'use-value con #t))
      (lambda ()
        (raise-continuable
-        (make-restarter 'use-value "Return x." 'foo '(x) k)))))))
+        (make-restarter 'use-value "Return x." 'foo '(x) condition? k)))))))
 
 (test-assert "restarter objects 2"
  (call-with-current-continuation
@@ -75,6 +75,7 @@
                         "Return (not x)."
                         'foo
                         '(x)
+                        condition?
                         (lambda (x) (k (not x))))))))))
 
 (test-equal "restarter objects 3"
@@ -96,6 +97,7 @@
                             "Return restarter info as a list."
                             'foo
                             '()
+                            condition?
                             dump)))
 
          (raise-continuable r)))))))
@@ -105,7 +107,7 @@
   (lambda (con) (restart/tag 'return-true con))
   (lambda ()
     (restarter-guard
-     (((return-true) "Return #t." #t))
+     (((return-true) "Return #t." condition? #t))
      (error 'no-one "something happen!")))))
 
 (test-equal "restarter-guard 2"
@@ -114,7 +116,7 @@
   (lambda (con) (restart/tag 'return-values con 1 2 3))
   (lambda ()
     (restarter-guard
-     (((return-values . vs) "Return vs." vs))
+     (((return-values . vs) "Return vs." error? vs))
      (error 'no-one "something happen!")))))
 
 ;; Ensure that the (lexically) most recently installed restarter
@@ -126,10 +128,12 @@
   (lambda ()
     (restarter-guard whole-expr (((use x)
                                   ""
+                                  condition?
                                   x))
       (+ 4
          (restarter-guard guard2 (((use x)
                                    ""
+                                   condition?
                                    x))
            (/ 2 0)))))))
 
