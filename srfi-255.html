@@ -308,7 +308,7 @@ the condition types <code>&amp;who</code> or
        (with-exception-handler
         (lambda (con)
           (raise-continuable
-           (if (condition? con)
+           (if ((restarter-condition-predicate val-restarter) con)
                (condition con val-restarter)
                con)))
         (lambda () (/ x y)))))))
