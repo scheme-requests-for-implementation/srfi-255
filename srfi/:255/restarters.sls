@@ -31,6 +31,7 @@
           restarter-formals
           restarter-description
           restarter-invoker
+          restarter-condition-predicate
           restarter-who
           restart
           define-restartable
@@ -56,6 +57,7 @@
     (description restarter-description)
     (who restarter-who)
     (formals restarter-formals)
+    (condition-predicate restarter-condition-predicate)
     (invoker restarter-invoker))
 
   (define (restart restarter . args)
@@ -114,6 +116,7 @@
                           (interaction-con
                            ((retry)
                             "default-interactor: retry"
+                            condition?
                             (retry)))
            (assert (pair? choice))
            ;; Lookup restarter by tag.
@@ -156,6 +159,12 @@
                 (newline))
               restarters))
 
+  ;; Filter *restarters* for only those restarters that accept
+  ;; the condition *con*.
+  (define (matching-restarters con restarters)
+    (filter (lambda (r) ((restarter-condition-predicate r) con))
+            restarters))
+
   (define-syntax restarter-guard
     (lambda (syn)
       ;; Raise a syntax violation if *bool* is false.
@@ -169,7 +178,7 @@
         ((_ who (c1 c2 ...) body1 body2 ...)
          (not (identifier? #'c1))
          (syntax (restarter-guard who (con c1 c2 ...) body1 body2 ...)))
-        ((_ who (con ((tag . arg*) description e1 e2 ...) ...)
+        ((_ who (con ((tag . arg*) description pred-expr e1 e2 ...) ...)
            body1 body2 ...)
          (begin
           (check-syntax (identifier? #'con) 'restarter-guard #'con)
@@ -186,13 +195,18 @@
                                           description
                                           'who
                                           'arg*
+                                          pred-expr
                                           (lambda arg*
                                             (k (lambda ()
                                                  e1 e2 ...))))) ...)
                    (with-exception-handler
                     (lambda (con)
                       (raise-continuable
-                       (if (condition? con) (condition con r ...) con)))
+                       (if (condition? con)
+                           (apply condition
+                                  con
+                                  (matching-restarters con (list r ...)))
+                           con)))
                     (lambda ()
                       ;; The body must be evaluated in the dynamic
                       ;; extent of the handler we just installed, so
@@ -205,7 +219,7 @@
                               (apply values vals))))))))))))))))))
 
   (define-syntax restartable
-    (syntax-rules ()
+    (syntax-rules (lambda)
      ((_ (x ...) . _)
       (syntax-violation 'restartable
                         "who must be an identifier or string"
@@ -218,6 +232,7 @@
                      who
                      (((use-arguments . formals)
                        "Apply procedure to new arguments."
+                       assertion-violation?
                        (make-application restartable-proc formals)))
                      (make-application proc formals)))))
         restartable-proc))
@@ -234,6 +249,7 @@
             (restarter-guard who
                              (((use-arguments . args)
                                "Apply procedure to new arguments."
+                               assertion-violation?
                                (apply restartable-proc args)))
               (apply proc args)))))
          restartable-proc))))
@@ -249,6 +265,7 @@
              (restarter-guard name
                               (((use-arguments . formals)
                                 "Apply procedure to new arguments."
+                                assertion-violation?
                                 (make-application name formals)))
                (make-application proc formals))))))
       ((_ name expr)
