@@ -432,7 +432,7 @@ determined by <code>dynamic-wind</code>) of the invocation of
 <var class="syn">body</var>. If an exception occurs, this handler
 constructs a compound restarter condition, which includes the condition
 raised by the triggering exception and
-restarters constructed from the <var class="syn">restarter-clauses</var>.
+restarters constructed from the <var class="syn">restarter-clauses</var>,
 and raises it with <code>raise-continuable</code>. Only restarters
 whose condition predicates return true when applied to the raised
 condition are included.
