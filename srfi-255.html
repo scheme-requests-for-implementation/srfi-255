@@ -398,15 +398,13 @@ in user code.</p>
 
 <h5>Syntax:</h5>
 
-<!-- FIXME: 'body' occurs in two different subforms. -->
-
 <p><var class="syn">restarter-clauses</var> takes one of two forms,
 either</p>
 
 <pre><code>(((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
   <var class="syn">pred-expression</var>
-  <var class="syn">body</var><code>) …)</code></pre>
+  <var class="syn">restarter-body</var><code>) …)</code></pre>
 
 <p>or</p>
 
@@ -414,7 +412,7 @@ either</p>
  <code>((</code><var class="syn">tag</var> <code>.</code> <var class="syn">formals</var><code>)</code>
   <var class="syn">description</var>
   <var class="syn">pred-expression</var>
-  <var class="syn">body</var><code>) …)</code></pre>
+  <var class="syn">restarter-body</var><code>) …)</code></pre>
 
 <p><var class="syn">who</var> must be an identifier or string.
 <var class="syn">condition-var</var> and <var class="syn">tag</var>
@@ -444,7 +442,7 @@ condition are included.
 If
 <var class="syn">condition-var</var> is provided, then the condition
 object raised by the original triggering exception is bound to it in
-each <var class="syn">body</var>.</p>
+each <var class="syn">restarter-body</var>.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
