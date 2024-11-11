@@ -254,6 +254,7 @@ types <code>&amp;who</code> or <code>&amp;message</code>.</p>
 <p>Usually, restarters and their handlers will be constructed
 implicitly by the high-level forms described in the
 <a href="#syntax">Syntax</a> section. Restarters and restarter handlers
+<!-- What is a restarter handler? -->
 must obey the following protocol:</p>
 
 <ul>
@@ -263,8 +264,9 @@ must obey the following protocol:</p>
     composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
     object raised by the triggering exception as one of its components.</p>
   </li>
+  <!-- FIXME: Is this requirement bogus? -->
   <li>
-    <p>A handler must not invoke or re-raise a restarter if the object
+    <p>A handler must not invoke a restarter if the object
     raised by the triggering exception does not satisfy that restarter’s
     condition predicate.</p>
   </li>
