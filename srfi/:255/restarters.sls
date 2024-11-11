@@ -37,7 +37,9 @@
           define-restartable
           restarter-guard
           restartable
-          default-interactor
+          current-interactor
+          with-interactor
+          with-current-interactor
           )
 
   (import (rnrs base (6))
@@ -49,6 +51,7 @@
           (rnrs io simple (6))
           (rnrs lists (6))
           (rnrs syntax-case (6))
+          (srfi :39 parameters)
           (srfi :255 helpers))
 
   (define-condition-type &restarter &condition
@@ -76,19 +79,36 @@
 
   ;; Returns an interactor whose interaction level is *level*.
   (define (make-default-interactor level)
-    (lambda (obj)
-      (if (restarter? obj)
-          (let ((restarters (condition-restarters obj)))
-            (call-with-current-continuation
-              (lambda (abort)
-                (let loop ()  ; main interaction loop
-                  (call-with-current-continuation
-                   (lambda (retry)
-                     (interact restarters level abort retry)))
-                     (loop)))))
-          (raise-continuable obj))))
+    (lambda (restarters)
+      (call-with-current-continuation
+       (lambda (abort)
+         (let loop ()  ; main interaction loop
+           (call-with-current-continuation
+            (lambda (retry)
+              (interact restarters level abort retry)))
+              (loop))))))
 
-  (define default-interactor (make-default-interactor 0))
+  (define current-interactor
+    (make-parameter (make-default-interactor 0)))
+
+  (define (with-interactor interactor thunk)
+    (with-exception-handler
+     (lambda (obj)
+       (if (restarter? obj)
+           (let ((restarters
+                  (filter restarter? (simple-conditions obj))))
+             (interactor restarters)
+             (raise
+              (condition
+               (make-who-condition 'with-interactor)
+               (make-message-condition "interactor returned")
+               (make-irritants-condition (list interactor restarters))
+               (make-non-continuable-violation))))
+            (raise-continuable obj)))
+     thunk))
+
+  (define (with-current-interactor thunk)
+    (with-interactor (current-interactor) thunk))
 
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.
@@ -109,7 +129,7 @@
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
     (define (invoke-selection choice)
-      (with-exception-handler
+      (with-interactor
        (make-default-interactor (+ level 1))
        (lambda ()
          (restarter-guard default-interactor

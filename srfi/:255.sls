@@ -37,7 +37,9 @@
           restarter-guard
           restartable
           restart
-          default-interactor
+          current-interactor
+          with-interactor
+          with-current-interactor
           )
 
   (import (srfi :255 restarters)))

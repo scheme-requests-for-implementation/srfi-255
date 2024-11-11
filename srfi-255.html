@@ -158,7 +158,8 @@ system that the ability to <em>interactively</em> choose a method of
 recovery for a condition is useful.  This ability, built into the Common
 Lisp language, is one of the primary reasons for the power of Common Lisp
 development and debugging environments. In this SRFI, the interactivity
-is provided by an <dfn>interactor</dfn>, a kind of exception handler.</p>
+is provided by an <dfn>interactor procedure</dfn> that by default is
+provided by the implementation, but can be overridden by the user.</p>
 
 <h3 id="srfi-249">SRFI 249</h3>
 
@@ -360,11 +361,9 @@ the result is undefined.</p>
 
 <h4 id="interactors">Interactors</h4>
 
-<p>An <dfn>interactor</dfn> is an exception handler as described in
-<cite>R6RS</cite> §7.1. If it is passed a restarter
-or a compound condition with
-one or more restarter components, then the interactor presents
-these restarters to the user. The information presented should include
+<p>An <dfn>interactor</dfn> is a procedure of one argument, a list
+of restarters, which the interactor presents
+to the user. The information presented should include
 the tag, description, and formals of each restarter. The user
 then selects a restarter and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
@@ -380,11 +379,28 @@ restarter’s invoker).</p>
 presented in examples throughout this document. These examples are
 non-normative.)</p>
 
-<p><code>(default-interactor</code> <var>condition</var><code>)</code></p>
+<p><code>current-interactor</code></p>
 
-<p>The system’s default interactive handler. This is an interactor
-as described above, and should be exposed to allow interactive restarts
-in user code.</p>
+<p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> parameter
+object whose value is an interactor procedure. An implementation should
+initialize <code>current-interactor</code> to a sensible default
+interactor.</p>
+
+<p><code>(with-interactor</code> <var>interactor</var>
+<var>thunk</var><code>)</code></p>
+
+<p>Returns the results of invoking <var>thunk</var>. A new current
+exception handler is installed for the dynamic extent (as determined by
+<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If a
+restartable condition is raised in this extent, the handler invokes
+<var>interactor</var> on the list of available restarters provided by
+that condition.</p>
+
+<p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
+
+<p>Equivalent to</p>
+
+<pre class="example"><code>(with-interactor (current-interactor) <var>thunk</var>)</code></pre>
 
 <!-- Syntax section -->
 

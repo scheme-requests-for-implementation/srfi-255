@@ -214,6 +214,20 @@
                         (list x rest))))
      0))))
 
+(test-equal "with-interactor 1"
+ 10
+ (with-interactor
+  (lambda (restarters)
+    (let ((use (find (lambda (r)
+                       (eqv? (restarter-tag r) 'use-value))
+                     restarters)))
+      (when use
+        (restart use 10))))
+  (lambda ()
+    (restarter-guard foo
+     (con ((use-value x) "return a value" condition? x))
+     (assertion-violation 'foo "bad")))))
+
 (test-end)
 
 (exit (test-runner-fail-count (test-runner-current)))
