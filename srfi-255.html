@@ -534,9 +534,9 @@ of the restarter is filled by <var class="syn">who</var>.</p>
 <h5>Examples:</h5>
 
 <pre class="example"><code>&gt;</code> <samp>(with-current-interactor
-    (lambda ()
-      (map (restartable "divider" (lambda (x) (/ 10 x)))
-           '(1 2 0 4))))</samp>
+   (lambda ()
+     (map (restartable "divider" (lambda (x) (/ 10 x)))
+          '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
@@ -557,10 +557,10 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
     (map (restartable proc-who proc) lis)))
 
 &gt;</code> <samp>(with-current-interactor
-    (lambda ()
-      (map-restartable "divider"
-                       (lambda (x) (/ 10 x)))
-                       '(1 2 0 4))))</samp>
+   (lambda ()
+     (map-restartable "divider"
+                      (lambda (x) (/ 10 x)))
+                      '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
@@ -570,10 +570,10 @@ restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
   ⇒ (#f)
 
 <code>&gt;</code> <samp>(with-current-interactor
-    (lambda ()
-      (map-restartable "divider"
-                       (lambda (x) (/ 10 x)))
-                       '(1 2 0 4))))</samp>
+   (lambda ()
+     (map-restartable "divider"
+                      (lambda (x) (/ 10 x)))
+                      '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
