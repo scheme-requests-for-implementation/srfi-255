@@ -312,8 +312,7 @@ the condition types <code>&amp;who</code> or
                con)))
         (lambda () (/ x y)))))))
 
-&gt; <samp>(with-exception-handler
-   default-interactor
+&gt; <samp>(with-current-interactor
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
@@ -493,8 +492,7 @@ by the triggering exception.</p>
           0))
     (/ a b)))
 
-&gt; <samp>(with-exception-handler
-   default-interactor
+&gt; <samp>(with-current-interactor
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
@@ -535,8 +533,7 @@ of the restarter is filled by <var class="syn">who</var>.</p>
 
 <h5>Examples:</h5>
 
-<pre class="example"><code>&gt;</code> <samp>(with-exception-handler
-    default-interactor
+<pre class="example"><code>&gt;</code> <samp>(with-current-interactor
     (lambda ()
       (map (restartable "divider" (lambda (x) (/ 10 x)))
            '(1 2 0 4))))</samp>
@@ -559,8 +556,7 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
            new-lis))
     (map (restartable proc-who proc) lis)))
 
-&gt;</code> <samp>(with-exception-handler
-    default-interactor
+&gt;</code> <samp>(with-current-interactor
     (lambda ()
       (map-restartable "divider"
                        (lambda (x) (/ 10 x)))
@@ -573,8 +569,7 @@ restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
 
   ⇒ (#f)
 
-<code>&gt;</code> <samp>(with-exception-handler
-    default-interactor
+<code>&gt;</code> <samp>(with-current-interactor
     (lambda ()
       (map-restartable "divider"
                        (lambda (x) (/ 10 x)))
@@ -632,8 +627,7 @@ forms:</p>
 <pre class="example"><code>(define-restartable (safe-/ x y)
   (/ x y))
 
-&gt;</code> <samp>(with-exception-handler
-   default-interactor
+&gt;</code> <samp>(with-current-interactor
    (lambda () (safe-/ 4 0)))</samp>
 
 <code>Restartable exception occurred.
