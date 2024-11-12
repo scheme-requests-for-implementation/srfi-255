@@ -451,7 +451,7 @@ whose condition predicates return true when applied to the raised
 condition are included.
 If
 <var class="syn">condition-var</var> is provided, then the condition
-object raised by the original triggering exception is bound to it in
+raised by the triggering exception is bound to it in
 each <var class="syn">restarter-body</var>.</p>
 
 <p>The who field of each restarter constructed from
@@ -459,12 +459,9 @@ each <var class="syn">restarter-body</var>.</p>
 <var class="syn">who</var>, and
 the condition-predicate field to the value of
 <var class="syn">pred-expression</var>.
-Each invoker is constructed
-from the <var class="syn">expressions</var>; when it is invoked, the
-values of the final <var class="syn">expression</var> are delivered
-to the continuation of the <code>restarter-guard</code> form. The
-restarter must preserve all of the components of the condition raised
-by the triggering exception.</p>
+Each invoker is constructed using the template
+<code>(lambda <var class="syn">formals</var>
+<var class="syn">restarter-body</var>)</code>.</p>
 
 <h5>Example:</h5>
 
