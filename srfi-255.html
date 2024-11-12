@@ -172,14 +172,6 @@ that SRFI 249 provides. In contrast, SRFI 255 provides a high-level
 interface that automatically handles the messy control details.
 (Restarters can still be constructed “by hand”, if need be.)</p>
 
-<p>Since the bulk of the SRFI 249 system
-also predates the exception systems of modern Scheme, it also
-duplicates the functionality of Scheme’s exception handlers by
-introducing a “restarter stack”. This stack, as a SRFI 39 / R7RS
-parameter object, is made part of the dynamic context of a Scheme
-program. Since we use the native exception system to install and
-manage restarters, there is no need for this complication.</p>
-
 <!-- Specification section -->
 
 <h2 id="specification">Specification</h2>
