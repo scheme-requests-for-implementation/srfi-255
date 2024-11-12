@@ -38,7 +38,6 @@
           restarter-guard
           restartable
           current-interactor
-          with-interactor
           with-current-interactor
           )
 
@@ -91,24 +90,22 @@
   (define current-interactor
     (make-parameter (make-default-interactor 0)))
 
-  (define (with-interactor interactor thunk)
+  (define (with-current-interactor thunk)
     (with-exception-handler
      (lambda (obj)
        (if (restarter? obj)
            (let ((restarters
-                  (filter restarter? (simple-conditions obj))))
+                  (filter restarter? (simple-conditions obj)))
+                 (interactor (current-interactor)))
              (interactor restarters)
              (raise
               (condition
-               (make-who-condition 'with-interactor)
+               (make-who-condition 'with-current-interactor)
                (make-message-condition "interactor returned")
                (make-irritants-condition (list interactor restarters))
                (make-non-continuable-violation))))
             (raise-continuable obj)))
      thunk))
-
-  (define (with-current-interactor thunk)
-    (with-interactor (current-interactor) thunk))
 
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.

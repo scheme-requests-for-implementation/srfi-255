@@ -385,21 +385,29 @@ object whose value is an interactor procedure. An implementation should
 initialize <code>current-interactor</code> to a sensible default
 interactor.</p>
 
-<p><code>(with-interactor</code> <var>interactor</var>
-<var>thunk</var><code>)</code></p>
+<p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
 
 <p>Returns the results of invoking <var>thunk</var>. A new current
 exception handler is installed for the dynamic extent (as determined by
 <code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If a
-restartable condition is raised in this extent, the handler invokes
-<var>interactor</var> on the list of available restarters provided by
-that condition.</p>
+restartable condition is raised in this extent, the handler evaluates
+<code>(current-interactor)</code> and applies the result to
+the list of available restarters provided by that condition.</p>
 
-<p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
+<p>Note that, since the current interactor is retrieved after an
+exception occurs and not when <code>with-current-interactor</code>
+is called, <var>thunk</var> may install new interactors dynamically.
+In the following, for example, a custom interactor is used to
+restart exceptions raised by one branch of the <code>cond</code>
+form:</p>
 
-<p>Equivalent to</p>
-
-<pre class="example"><code>(with-interactor (current-interactor) <var>thunk</var>)</code></pre>
+<pre class="example"><code>(define (foo obj)
+  (with-current-interactor
+   (lambda ()
+     (cond ((procedure? obj)
+            (parameterize ((current-interactor my-custom-interactor))
+              EX1 EX2 ...))  ; use my-custom-interactor
+           (else EY1 EY2 ...))))) ; use the default interactor</code></pre>
 
 <!-- Syntax section -->
 

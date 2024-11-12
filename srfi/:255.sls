@@ -38,7 +38,6 @@
           restartable
           restart
           current-interactor
-          with-interactor
           with-current-interactor
           )
 
