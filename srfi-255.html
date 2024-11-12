@@ -385,12 +385,13 @@ object whose value is an interactor procedure.</p>
 
 <p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
 
-<p>Returns the results of invoking <var>thunk</var>. A new current
+<p>Returns the results of invoking <var>thunk</var>. An
 exception handler is installed for the dynamic extent (as determined by
-<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If a
-restartable condition is raised in this extent, the handler evaluates
+<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If this
+handler is passed a condition with type <code>&amp;restarter</code>,
+then it evaluates
 <code>(current-interactor)</code> and applies the result to
-the list of available restarters provided by that condition.</p>
+a list of that condition’s restarters.</p>
 
 <p>Note that, since the current interactor is retrieved after an
 exception occurs and not when <code>with-current-interactor</code>
