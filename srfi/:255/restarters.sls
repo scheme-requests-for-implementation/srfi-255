@@ -126,9 +126,8 @@
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
     (define (invoke-selection choice)
-      (with-interactor
-       (make-default-interactor (+ level 1))
-       (lambda ()
+      (parameterize ((current-interactor
+                      (make-default-interactor (+ level 1))))
          (restarter-guard default-interactor
                           (interaction-con
                            ((retry)
@@ -146,8 +145,10 @@
                       (apply restart r vals))))
                  (else (error 'default-interactor
                               "invalid restarter choice"
-                              choice)))))))
+                              choice))))))
 
+    (with-current-interactor
+     (lambda ()
     (display "Restartable exception occurred.\n")
     (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
       (show-restarters (vector->list urs)))
@@ -163,7 +164,7 @@
                         (display v)
                         (newline))
                       vals))
-          (loop)))))
+          (loop)))))))
 
   ;; Print a list of restarters.
   (define (show-restarters restarters)
