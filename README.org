@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 * SRFI 255: Restarting conditions
 
-** by Wolfgang Corcoran-Mathe and Marc Nieper-Wißkirchen
+** by Wolfgang Corcoran-Mathe
 
 
 
