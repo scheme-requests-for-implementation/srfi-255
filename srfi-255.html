@@ -379,8 +379,8 @@ non-normative.)</p>
 
 <p><code>current-interactor</code></p>
 
-<p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> parameter
-object whose value is an interactor procedure.</p>
+<p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> / R7RS
+parameter object whose value is an interactor procedure.</p>
 
 <p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
 
@@ -558,6 +558,7 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
   (restarter-guard map-restartable
     (mcon ((use-list new-lis)
            "Return new-lis as the value of map-restartable."
+           serious-condition?
            (assert (list? new-lis))
            new-lis))
     (map (restartable proc-who proc) lis)))
@@ -687,8 +688,9 @@ itself based on
 proposal</a> by Taylor Campbell. The SRFI 255 “fork” was almost
 completely rewritten by Wolfgang Corcoran-Mathe.</p>
 
-<p>Marc Nieper-Wißkirchen came up with the original concept of the
-SRFI 255 restarter system, as well as the initial sample implementation.
+<p>Marc Nieper-Wißkirchen came up with the original concept and sample
+implementation of the
+SRFI 255 restarter system.
 His work provided the foundation for this SRFI and is gratefully
 acknowledged. (This is not meant to imply that he endorses the final
 SRFI.)</p>
