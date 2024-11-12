@@ -122,10 +122,10 @@ how an implementation should handle restarters with identical tags?
 Consider this example:</p>
 
 <pre class="example"><code>(restarter-guard map
-  (((use xs) "Return xs." xs))
+  (((use xs) "Return xs." condition? xs))
   (map (lambda (x)
          (restarter-guard reciprocal
-           (((use y) "Return y." y))
+           (((use y) "Return y." condition? y))
            (/ x)))
        '(0 1 2)))</code></pre>
 
