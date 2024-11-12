@@ -402,7 +402,7 @@ form:</p>
 
 <h3 id="syntax">Syntax</h3>
 
-<p><code>(restarter-guard</code> <var class="syn">who</var>
+<p id="restarter-guard"><code>(restarter-guard</code> <var class="syn">who</var>
 <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
 
@@ -516,7 +516,9 @@ violation occurs.</p>
 <h5>Semantics:</h5>
 
 <p><var class="syn">expr</var> must evaluate to a procedure. The
-<code>restartable</code> form establishes a restarter with tag
+<code>restartable</code> form establishes (as if with
+<a href="#restarter-guard"><code>restarter-guard</code></a>) a
+restater with tag
 <code>use-arguments</code> for the
 dynamic extent of this procedure’s invocation. If an assertion
 violation (an exception raising a condition having type
@@ -596,7 +598,8 @@ forms:</p>
   <p>The
   <code>define-restartable</code> form defines <var class="syn">variable</var>,
   binding it to a new procedure. A restarter with tag
-  <code>use-arguments</code> is established for the
+  <code>use-arguments</code> is established (as if with
+  <a href="#restarter-guard"><code>restarter-guard</code></a>) for the
   dynamic extent of this procedure's invocation. If an assertion
   violation (an exception raising a condition having type
   <code>&amp;assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
