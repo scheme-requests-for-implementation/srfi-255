@@ -37,7 +37,8 @@
           define-restartable
           restarter-guard
           restartable
-          default-interactor
+          current-interactor
+          with-current-interactor
           )
 
   (import (rnrs base (6))
@@ -49,6 +50,7 @@
           (rnrs io simple (6))
           (rnrs lists (6))
           (rnrs syntax-case (6))
+          (srfi :39 parameters)
           (srfi :255 helpers))
 
   (define-condition-type &restarter &condition
@@ -76,19 +78,34 @@
 
   ;; Returns an interactor whose interaction level is *level*.
   (define (make-default-interactor level)
-    (lambda (obj)
-      (if (restarter? obj)
-          (let ((restarters (condition-restarters obj)))
-            (call-with-current-continuation
-              (lambda (abort)
-                (let loop ()  ; main interaction loop
-                  (call-with-current-continuation
-                   (lambda (retry)
-                     (interact restarters level abort retry)))
-                     (loop)))))
-          (raise-continuable obj))))
+    (lambda (restarters)
+      (call-with-current-continuation
+       (lambda (abort)
+         (let loop ()  ; main interaction loop
+           (call-with-current-continuation
+            (lambda (retry)
+              (interact restarters level abort retry)))
+              (loop))))))
 
-  (define default-interactor (make-default-interactor 0))
+  (define current-interactor
+    (make-parameter (make-default-interactor 0)))
+
+  (define (with-current-interactor thunk)
+    (with-exception-handler
+     (lambda (obj)
+       (if (restarter? obj)
+           (let ((restarters
+                  (filter restarter? (simple-conditions obj)))
+                 (interactor (current-interactor)))
+             (interactor restarters)
+             (raise
+              (condition
+               (make-who-condition 'with-current-interactor)
+               (make-message-condition "interactor returned")
+               (make-irritants-condition (list interactor restarters))
+               (make-non-continuable-violation))))
+            (raise-continuable obj)))
+     thunk))
 
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.
@@ -96,6 +113,11 @@
     ;; Table associating restarter tags with restarters. If there
     ;; are multiple restarters with the same tag, the first (by
     ;; index in *restarters*) takes priority.
+    ;;
+    ;; This is a quick-and-dirty way to handle the general problem
+    ;; of duplicated restarter tags. A more sophisticated interactor
+    ;; might allow the user to disambiguate their choice using the
+    ;; restarter's "who" field, or perhaps an index number.
     (define restarters-by-tag
       (let ((table (make-eqv-hashtable (length restarters))))
         (for-each (lambda (r)
@@ -109,9 +131,8 @@
     ;; Try to run the restarter selected by the user on the
     ;; values of the provided arguments.
     (define (invoke-selection choice)
-      (with-exception-handler
-       (make-default-interactor (+ level 1))
-       (lambda ()
+      (parameterize ((current-interactor
+                      (make-default-interactor (+ level 1))))
          (restarter-guard default-interactor
                           (interaction-con
                            ((retry)
@@ -129,8 +150,10 @@
                       (apply restart r vals))))
                  (else (error 'default-interactor
                               "invalid restarter choice"
-                              choice)))))))
+                              choice))))))
 
+    (with-current-interactor
+     (lambda ()
     (display "Restartable exception occurred.\n")
     (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
       (show-restarters (vector->list urs)))
@@ -146,7 +169,7 @@
                         (display v)
                         (newline))
                       vals))
-          (loop)))))
+          (loop)))))))
 
   ;; Print a list of restarters.
   (define (show-restarters restarters)

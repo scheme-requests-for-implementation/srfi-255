@@ -2,6 +2,7 @@
 ;;; SPDX-License-Identifier: MIT
 
 (import (rnrs)
+        (srfi :39)
         (srfi :64)
         (srfi :255)
         (only (chezscheme) include))

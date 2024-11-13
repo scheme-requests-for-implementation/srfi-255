@@ -6,6 +6,7 @@
   (default-duplicate-binding-handler '(last)))
 
 (import (rnrs)
+        (srfi srfi-39)
         (srfi srfi-64)
         (srfi srfi-255)
         (only (guile) include))

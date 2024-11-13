@@ -117,32 +117,6 @@ which implement interactive restarts.</p>
 
 <h2 id="issues">Issues</h2>
 
-<p>Should <code>restarter-guard</code> provide a way to
-control which kinds of conditions can be restarted? Currently,
-<code>restarter-guard</code> is specified to restart any exception
-that occurs.</p>
-
-<p>Should we specify that restarters are identified by their tags, and
-how an implementation should handle restarters with identical tags?
-Consider this example:</p>
-
-<pre class="example"><code>(restarter-guard map
-  (((use xs) "Return xs." xs))
-  (map (lambda (x)
-         (restarter-guard reciprocal
-           (((use y) "Return y." y))
-           (/ x)))
-       '(0 1 2)))</code></pre>
-
-<p>When <code>(/ 0)</code> is evaluated, two restarters, both tagged
-<code>use</code>, are raised. An implementation could handle this
-situation in several ways. It might give the “nearest” (i.e. to the
-exception) restarter, in this case <code>reciprocal</code>, priority
-and ignore the “outer” restarter. Alternatively, an interactor might
-prompt the user to disambiguate their choice by providing a who field.
-(This is not a general solution, however, since the who fields might
-also be the same.)</p>
-
 <h2 id="rationale">Rationale</h2>
 
 <p>An effective and flexible system for gracefully handling and
@@ -162,7 +136,8 @@ system that the ability to <em>interactively</em> choose a method of
 recovery for a condition is useful.  This ability, built into the Common
 Lisp language, is one of the primary reasons for the power of Common Lisp
 development and debugging environments. In this SRFI, the interactivity
-is provided by an <dfn>interactor</dfn>, a kind of exception handler.</p>
+is provided by an <dfn>interactor procedure</dfn> that by default is
+provided by the implementation, but can be overridden by the user.</p>
 
 <h3 id="srfi-249">SRFI 249</h3>
 
@@ -175,14 +150,6 @@ programming to create correct restarters with the low-level tools
 that SRFI 249 provides. In contrast, SRFI 255 provides a high-level
 interface that automatically handles the messy control details.
 (Restarters can still be constructed “by hand”, if need be.)</p>
-
-<p>Since the bulk of the SRFI 249 system
-also predates the exception systems of modern Scheme, it also
-duplicates the functionality of Scheme’s exception handlers by
-introducing a “restarter stack”. This stack, as a SRFI 39 / R7RS
-parameter object, is made part of the dynamic context of a Scheme
-program. Since we use the native exception system to install and
-manage restarters, there is no need for this complication.</p>
 
 <!-- Specification section -->
 
@@ -257,8 +224,8 @@ types <code>&amp;who</code> or <code>&amp;message</code>.</p>
 
 <p>Usually, restarters and their handlers will be constructed
 implicitly by the high-level forms described in the
-<a href="#syntax">Syntax</a> section. Restarters and restarter handlers
-must obey the following protocol:</p>
+<a href="#syntax">Syntax</a> section. Restarters and handlers that
+invoke them must obey the following protocol:</p>
 
 <ul>
   <li>
@@ -267,8 +234,9 @@ must obey the following protocol:</p>
     composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
     object raised by the triggering exception as one of its components.</p>
   </li>
+  <!-- FIXME: Is this requirement bogus? -->
   <li>
-    <p>A handler must not invoke or re-raise a restarter if the object
+    <p>A handler must not invoke a restarter if the object
     raised by the triggering exception does not satisfy that restarter’s
     condition predicate.</p>
   </li>
@@ -313,8 +281,7 @@ the condition types <code>&amp;who</code> or
                con)))
         (lambda () (/ x y)))))))
 
-&gt; <samp>(with-exception-handler
-   default-interactor
+&gt; <samp>(with-current-interactor
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
@@ -362,11 +329,9 @@ the result is undefined.</p>
 
 <h4 id="interactors">Interactors</h4>
 
-<p>An <dfn>interactor</dfn> is an exception handler as described in
-<cite>R6RS</cite> §7.1. If it is passed a restarter
-or a compound condition with
-one or more restarter components, then the interactor presents
-these restarters to the user. The information presented should include
+<p>An <dfn>interactor</dfn> is a procedure of one argument, a list
+of restarters, which the interactor presents
+to the user. The information presented should include
 the tag, description, and formals of each restarter. The user
 then selects a restarter and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
@@ -382,17 +347,41 @@ restarter’s invoker).</p>
 presented in examples throughout this document. These examples are
 non-normative.)</p>
 
-<p><code>(default-interactor</code> <var>condition</var><code>)</code></p>
+<p><code>current-interactor</code></p>
 
-<p>The system’s default interactive handler. This is an interactor
-as described above, and should be exposed to allow interactive restarts
-in user code.</p>
+<p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> / R7RS
+parameter object whose value is an interactor procedure.</p>
+
+<p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
+
+<p>Returns the results of invoking <var>thunk</var>. An
+exception handler is installed for the dynamic extent (as determined by
+<code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If this
+handler is passed a condition with type <code>&amp;restarter</code>,
+then it evaluates
+<code>(current-interactor)</code> and applies the result to
+a list of that condition’s restarters.</p>
+
+<p>Note that, since the current interactor is retrieved after an
+exception occurs and not when <code>with-current-interactor</code>
+is called, <var>thunk</var> may install new interactors dynamically.
+In the following, for example, a custom interactor is used to
+restart exceptions raised by one branch of the <code>cond</code>
+form:</p>
+
+<pre class="example"><code>(define (foo obj)
+  (with-current-interactor
+   (lambda ()
+     (cond ((procedure? obj)
+            (parameterize ((current-interactor my-custom-interactor))
+              ...))  ; use my-custom-interactor
+           (else ...))))) ; use the default interactor</code></pre>
 
 <!-- Syntax section -->
 
 <h3 id="syntax">Syntax</h3>
 
-<p><code>(restarter-guard</code> <var class="syn">who</var>
+<p id="restarter-guard"><code>(restarter-guard</code> <var class="syn">who</var>
 <var class="syn">restarter-clauses</var>
 <var class="syn">body</var><code>)</code></p>
 
@@ -441,7 +430,7 @@ whose condition predicates return true when applied to the raised
 condition are included.
 If
 <var class="syn">condition-var</var> is provided, then the condition
-object raised by the original triggering exception is bound to it in
+raised by the triggering exception is bound to it in
 each <var class="syn">restarter-body</var>.</p>
 
 <p>The who field of each restarter constructed from
@@ -449,12 +438,9 @@ each <var class="syn">restarter-body</var>.</p>
 <var class="syn">who</var>, and
 the condition-predicate field to the value of
 <var class="syn">pred-expression</var>.
-Each invoker is constructed
-from the <var class="syn">expressions</var>; when it is invoked, the
-values of the final <var class="syn">expression</var> are delivered
-to the continuation of the <code>restarter-guard</code> form. The
-restarter must preserve all of the components of the condition raised
-by the triggering exception.</p>
+Each invoker is constructed using the template
+<code>(lambda <var class="syn">formals</var>
+<var class="syn">restarter-body</var>)</code>.</p>
 
 <h5>Example:</h5>
 
@@ -479,8 +465,7 @@ by the triggering exception.</p>
           0))
     (/ a b)))
 
-&gt; <samp>(with-exception-handler
-   default-interactor
+&gt; <samp>(with-current-interactor
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
@@ -510,7 +495,9 @@ violation occurs.</p>
 <h5>Semantics:</h5>
 
 <p><var class="syn">expr</var> must evaluate to a procedure. The
-<code>restartable</code> form establishes a restarter with tag
+<code>restartable</code> form establishes (as if with
+<a href="#restarter-guard"><code>restarter-guard</code></a>) a
+restarter with tag
 <code>use-arguments</code> for the
 dynamic extent of this procedure’s invocation. If an assertion
 violation (an exception raising a condition having type
@@ -521,11 +508,10 @@ of the restarter is filled by <var class="syn">who</var>.</p>
 
 <h5>Examples:</h5>
 
-<pre class="example"><code>&gt;</code> <samp>(with-exception-handler
-    default-interactor
-    (lambda ()
-      (map (restartable "divider" (lambda (x) (/ 10 x)))
-           '(1 2 0 4))))</samp>
+<pre class="example"><code>&gt;</code> <samp>(with-current-interactor
+   (lambda ()
+     (map (restartable "divider" (lambda (x) (/ 10 x)))
+          '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
@@ -541,16 +527,16 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
   (restarter-guard map-restartable
     (mcon ((use-list new-lis)
            "Return new-lis as the value of map-restartable."
+           serious-condition?
            (assert (list? new-lis))
            new-lis))
     (map (restartable proc-who proc) lis)))
 
-&gt;</code> <samp>(with-exception-handler
-    default-interactor
-    (lambda ()
-      (map-restartable "divider"
-                       (lambda (x) (/ 10 x)))
-                       '(1 2 0 4))))</samp>
+&gt;</code> <samp>(with-current-interactor
+   (lambda ()
+     (map-restartable "divider"
+                      (lambda (x) (/ 10 x)))
+                      '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
@@ -559,12 +545,11 @@ restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
 
   ⇒ (#f)
 
-<code>&gt;</code> <samp>(with-exception-handler
-    default-interactor
-    (lambda ()
-      (map-restartable "divider"
-                       (lambda (x) (/ 10 x)))
-                       '(1 2 0 4))))</samp>
+<code>&gt;</code> <samp>(with-current-interactor
+   (lambda ()
+     (map-restartable "divider"
+                      (lambda (x) (/ 10 x)))
+                      '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
@@ -592,7 +577,8 @@ forms:</p>
   <p>The
   <code>define-restartable</code> form defines <var class="syn">variable</var>,
   binding it to a new procedure. A restarter with tag
-  <code>use-arguments</code> is established for the
+  <code>use-arguments</code> is established (as if with
+  <a href="#restarter-guard"><code>restarter-guard</code></a>) for the
   dynamic extent of this procedure's invocation. If an assertion
   violation (an exception raising a condition having type
   <code>&amp;assertion</code> (see <cite>R6RS</cite> §7.3)) occurs during invocation,
@@ -618,8 +604,7 @@ forms:</p>
 <pre class="example"><code>(define-restartable (safe-/ x y)
   (/ x y))
 
-&gt;</code> <samp>(with-exception-handler
-   default-interactor
+&gt;</code> <samp>(with-current-interactor
    (lambda () (safe-/ 4 0)))</samp>
 
 <code>Restartable exception occurred.
@@ -671,13 +656,14 @@ It is in portable R6RS Scheme.</p>
 itself based on
 <a href="https://mumble.net/~campbell/proposals/restart.text">a
 proposal</a> by Taylor Campbell. The SRFI 255 “fork” was almost
-completely rewritten by Wolfgang Corcoran-Mathe and Marc
-Nieper-Wißkirchen.</p>
+completely rewritten by Wolfgang Corcoran-Mathe.</p>
 
-<p>The sample implementation was written by Marc Nieper-Wißkirchen and
-Wolfgang Corcoran-Mathe. The SRFI 249 sample implementation (on which
-the current implementation is not based) was written by Arvydas
-Silanskas and revised by Wolfgang Corcoran-Mathe.</p>
+<p>Marc Nieper-Wißkirchen came up with the original concept and sample
+implementation of the
+SRFI 255 restarter system.
+His work provided the foundation for this SRFI and is gratefully
+acknowledged. (This is not meant to imply that he endorses the final
+SRFI.)</p>
 
 <p>Thanks to John Cowan for his work on SRFI 249, and his tireless
 work on so much else in Scheme.</p>

@@ -214,6 +214,24 @@
                         (list x rest))))
      0))))
 
+(test-equal "with-current-interactor"
+ 0
+ (with-current-interactor
+  (lambda ()
+    (parameterize ((current-interactor
+                    (lambda (rs)
+                      (let ((r (find (lambda (r)
+                                       (eqv? (restarter-tag r)
+                                             'return-zero))
+                                     rs)))
+                        (and r (restart r))))))
+      (restarter-guard somewhere
+       (con ((return-zero)
+              "return zero"
+              assertion-violation?
+              0))
+       (assertion-violation 'somewhere "bad"))))))
+
 (test-end)
 
 (exit (test-runner-fail-count (test-runner-current)))
