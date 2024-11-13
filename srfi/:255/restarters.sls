@@ -113,6 +113,11 @@
     ;; Table associating restarter tags with restarters. If there
     ;; are multiple restarters with the same tag, the first (by
     ;; index in *restarters*) takes priority.
+    ;;
+    ;; This is a quick-and-dirty way to handle the general problem
+    ;; of duplicated restarter tags. A more sophisticated interactor
+    ;; might allow the user to disambiguate their choice using the
+    ;; restarter's "who" field, or perhaps an index number.
     (define restarters-by-tag
       (let ((table (make-eqv-hashtable (length restarters))))
         (for-each (lambda (r)
