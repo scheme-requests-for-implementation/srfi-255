@@ -12,7 +12,7 @@ keywords: [[https://srfi.schemers.org/?keywords=exceptions][Exceptions]]
 This repository hosts [[https://srfi.schemers.org/srfi-255/][SRFI 255]]: Restarting conditions, a [[https://srfi.schemers.org/][Scheme Request for Implementation]].
 
 This SRFI is in /draft/ status.
-See also [[/srfi-255/][SRFI 255: Restarting conditions]].
+See also [[/srfi-249/][SRFI 249: Restarting conditions]].
 The full documentation for this SRFI can be found in the [[https://srfi.schemers.org/srfi-255/srfi-255.html][SRFI Document]].
 
 If you'd like to participate in the discussion of this SRFI, or report issues with it, please [[https://srfi.schemers.org/srfi-255/][join the SRFI-255 mailing list]] and send your message there.
