@@ -232,6 +232,23 @@
               0))
        (assertion-violation 'somewhere "bad"))))))
 
+(test-eqv "unrestartable"
+ 0
+ (guard (con
+         ((assertion-violation? con) 0))
+   (parameterize ((current-interactor
+                   (lambda (rs)
+                     (let ((r (find (lambda (r)
+                                      (eqv? (restarter-tag r)
+                                            'return-1))
+                                    rs)))
+                       (and r (restart r))))))
+     (with-current-interactor
+      (lambda ()
+        (restarter-guard foo
+         (con ((return-1) "" error? 1))
+          (assertion-violation 'foo "bad")))))))
+
 (test-end)
 
 (exit (test-runner-fail-count (test-runner-current)))
