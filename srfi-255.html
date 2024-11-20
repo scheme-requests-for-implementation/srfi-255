@@ -438,9 +438,11 @@ each <var class="syn">restarter-body</var>.</p>
 <var class="syn">who</var>, and
 the condition-predicate field to the value of
 <var class="syn">pred-expression</var>.
-Each invoker is constructed using the template
-<code>(lambda <var class="syn">formals</var>
-<var class="syn">restarter-body</var>)</code>.</p>
+Each invoker procedure is constructed from a
+<var class="syn">formals</var> and a <var class="syn">restarter-body</var>.
+When an invoker is invoked, the results of evaluating
+<var class="syn">restarter-body</var> are delivered to the continuation
+of the <code>restarter-guard</code> expression.</p>
 
 <h5>Example:</h5>
 
