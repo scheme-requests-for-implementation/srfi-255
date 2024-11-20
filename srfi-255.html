@@ -127,7 +127,7 @@ form described in the <cite>R6RS</cite> and <cite>R7RS</cite> reports
 provide a basic kind of recovery system, they do not make it
 convenient for a signaling process to offer a choice of recovery
 routes to the handler. This SRFI attempts to make up for this
-deficiency by extending the handler-condition system with the forms
+deficiency by extending the exception system with the forms
 and mechanisms needed for convenient recovery.</p>
 
 <p>One important feature for a restart system to provide is interactivity.
@@ -219,9 +219,7 @@ It has five fields:</p>
 are specific to that restarter, and must be preserved if
 the restarter is compounded with other condition objects and later
 extracted. Therefore compound conditions must not be used to implement
-these informational fields. In particular, a restarter constructed by
-<code>make-restarter</code> (see below) must not have the condition
-types <code>&amp;who</code> or <code>&amp;message</code>.</p>
+these informational fields.</p>
 
 <p>Usually, restarters and their handlers will be constructed
 implicitly by the high-level forms described in the
