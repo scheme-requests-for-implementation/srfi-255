@@ -127,7 +127,7 @@ form described in the <cite>R6RS</cite> and <cite>R7RS</cite> reports
 provide a basic kind of recovery system, they do not make it
 convenient for a signaling process to offer a choice of recovery
 routes to the handler. This SRFI attempts to make up for this
-deficiency by extending the handler-condition system with the forms
+deficiency by extending the exception system with the forms
 and mechanisms needed for convenient recovery.</p>
 
 <p>One important feature for a restart system to provide is interactivity.
@@ -219,9 +219,7 @@ It has five fields:</p>
 are specific to that restarter, and must be preserved if
 the restarter is compounded with other condition objects and later
 extracted. Therefore compound conditions must not be used to implement
-these informational fields. In particular, a restarter constructed by
-<code>make-restarter</code> (see below) must not have the condition
-types <code>&amp;who</code> or <code>&amp;message</code>.</p>
+these informational fields.</p>
 
 <p>Usually, restarters and their handlers will be constructed
 implicitly by the high-level forms described in the
@@ -313,7 +311,8 @@ restart[0]&gt; <samp>(return-value 4)</samp>
 <code>(restarter-formals</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">pair-or-symbol</span></p>
 
-<p>Returns the tag / description / who / formals of <var>restarter</var>.
+<p>Returns the tag / description / who / condition predicate /
+formals of <var>restarter</var>.
 The effect of mutating the values returned by these procedures is
 undefined.</p>
 
@@ -439,9 +438,11 @@ each <var class="syn">restarter-body</var>.</p>
 <var class="syn">who</var>, and
 the condition-predicate field to the value of
 <var class="syn">pred-expression</var>.
-Each invoker is constructed using the template
-<code>(lambda <var class="syn">formals</var>
-<var class="syn">restarter-body</var>)</code>.</p>
+Each invoker procedure is constructed from a
+<var class="syn">formals</var> and a <var class="syn">restarter-body</var>.
+When an invoker is invoked, the results of evaluating
+<var class="syn">restarter-body</var> are delivered to the continuation
+of the <code>restarter-guard</code> expression.</p>
 
 <h5>Example:</h5>
 
@@ -672,6 +673,7 @@ work on so much else in Scheme.</p>
 <p>Thanks to those who provided reviews and commentary via the SRFI
 255 mailing list or the <span class="channel">#scheme</span> IRC
 channel, including: Arthur A. Gleckler, Daphne Preston-Kendal,
+Vincent Manis,
 and Andrew Whatson.</p>
 
 <h2 id="references">References</h2>

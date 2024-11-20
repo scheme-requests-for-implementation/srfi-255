@@ -119,23 +119,32 @@
      (((return-values . vs) "Return vs." error? vs))
      (error 'no-one "something happen!")))))
 
-;; Ensure that the (lexically) most recently installed restarter
-;; takes priority when there are duplicate tags.
-(test-equal "restarter-guard 3: duplicate tags"
- 7
- (with-exception-handler
-  (lambda (con) (restart/tag 'use con 3))
-  (lambda ()
-    (restarter-guard whole-expr (((use x)
-                                  ""
-                                  condition?
-                                  x))
-      (+ 4
-         (restarter-guard guard2 (((use x)
-                                   ""
-                                   condition?
-                                   x))
-           (/ 2 0)))))))
+(test-equal "restarter-guard filters restarters"
+ '(foo)
+ (guard (con ((restarter? con)
+              (map restarter-tag
+                   (filter restarter? (simple-conditions con)))))
+   (restarter-guard somewhere
+    (con ((foo) "" assertion-violation? 0)
+         ((bar) "" error? 1))
+     (assertion-violation 'somewhere "bad"))))
+
+(test-eqv "restarter-guard unrestartable"
+ 0
+ (guard (con
+         ((assertion-violation? con) 0))
+   (parameterize ((current-interactor
+                   (lambda (rs)
+                     (let ((r (find (lambda (r)
+                                      (eqv? (restarter-tag r)
+                                            'return-1))
+                                    rs)))
+                       (and r (restart r))))))
+     (with-current-interactor
+      (lambda ()
+        (restarter-guard foo
+         (con ((return-1) "" error? 1))
+          (assertion-violation 'foo "bad")))))))
 
 (test-assert "define-restartable 1"
  (with-exception-handler

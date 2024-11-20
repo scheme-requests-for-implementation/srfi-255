@@ -104,7 +104,7 @@
                (make-message-condition "interactor returned")
                (make-irritants-condition (list interactor restarters))
                (make-non-continuable-violation))))
-            (raise-continuable obj)))
+           (raise-continuable obj)))
      thunk))
 
   ;; Show the interactive user the available restarts, prompt for
