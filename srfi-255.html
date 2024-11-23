@@ -361,7 +361,8 @@ exception handler is installed for the dynamic extent (as determined by
 handler is passed a condition with type <code>&amp;restarter</code>,
 then it evaluates
 <code>(current-interactor)</code> and applies the result to
-a list of that condition’s restarters.</p>
+a list of that condition’s restarters. Non-restarter conditions are
+re-raised.</p>
 
 <p>Note that, since the current interactor is retrieved after an
 exception occurs and not when <code>with-current-interactor</code>
