@@ -234,7 +234,6 @@ invoke them must obey the following protocol:</p>
     composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
     object raised by the triggering exception as one of its components.</p>
   </li>
-  <!-- FIXME: Is this requirement bogus? -->
   <li>
     <p>A handler must not invoke a restarter if the object
     raised by the triggering exception does not satisfy that restarter’s
@@ -446,11 +445,6 @@ When an invoker is invoked, the results of evaluating
 of the <code>restarter-guard</code> expression.</p>
 
 <h5>Example:</h5>
-
-<!--
-  TODO: More examples, specifically one using the condition
-  object in some useful way.
- -->
 
 <pre class="example"><code>(define (safe-/ a b)
   (restarter-guard safe-/
