@@ -429,11 +429,7 @@ raised by the triggering exception and
 restarters constructed from the <var class="syn">restarter-clauses</var>,
 and raises it with <code>raise-continuable</code>. Only restarters
 whose condition predicates return true when applied to the raised
-condition are included.
-If
-<var class="syn">condition-var</var> is provided, then the condition
-raised by the triggering exception is bound to it in
-each <var class="syn">restarter-body</var>.</p>
+condition are included.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
@@ -442,6 +438,9 @@ the condition-predicate field to the value of
 <var class="syn">pred-expression</var>.
 Each invoker procedure is constructed from a
 <var class="syn">formals</var> and a <var class="syn">restarter-body</var>.
+If <var class="syn">condition-var</var> was provided, then the condition
+raised by the triggering exception is bound to it in
+each <var class="syn">restarter-body</var>.
 When an invoker is invoked, the results of evaluating
 <var class="syn">restarter-body</var> are delivered to the continuation
 of the <code>restarter-guard</code> expression.</p>
