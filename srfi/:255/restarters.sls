@@ -154,22 +154,22 @@
 
     (with-current-interactor
      (lambda ()
-    (display "Restartable exception occurred.\n")
-    (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
-      (show-restarters (vector->list urs)))
-    (let loop ()  ; prompt loop
-      (display "restart [")
-      (display level)
-      (display "]> ")
-      (let ((choice (read)))
-        (when (eof-object? choice) (abort))  ; TODO: Improve behavior
-        (let-values ((vals (invoke-selection choice)))
-          (unless (null? vals)
-            (for-each (lambda (v)
-                        (display v)
-                        (newline))
-                      vals))
-          (loop)))))))
+       (display "Restartable exception occurred.\n")
+       (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
+         (show-restarters (vector->list urs)))
+       (let loop ()  ; prompt loop
+         (display "restart [")
+         (display level)
+         (display "]> ")
+         (let ((choice (read)))
+           (when (eof-object? choice) (abort))  ; TODO: Improve behavior
+           (let-values ((vals (invoke-selection choice)))
+             (unless (null? vals)
+               (for-each (lambda (v)
+                           (display v)
+                           (newline))
+                         vals))
+             (loop)))))))
 
   ;; Print a list of restarters.
   (define (show-restarters restarters)
