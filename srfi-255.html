@@ -66,38 +66,68 @@
 
 <h2 id="table-of-contents">Table of Contents</h2>
 
-<ol>
+<ul>
   <li>
     <a href="#rationale">Rationale</a>
-    <ol>
+    <ul>
       <li><a href="#srfi-249">SRFI 249</a></li>
-    </ol>
+    </ul>
   </li>
   <li>
     <a href="#specification">Specification</a>
-    <ol>
+    <ul>
       <li><a href="#notation">Notation</a></li>
       <li><a href="#restarter-conditions">Restarter conditions</a></li>
       <li>
         <a href="#procedures">Procedures</a>
-        <ol>
-          <li><a href="#interactors">Interactors</a></li>
-        </ol>
+        <ul>
+          <li><a href="#make-restarter"><code>make-restarter</code></a></li>
+          <li><a href="#restarter-p"><code>restarter?</code></a></li>
+          <li><a href="#restarter-tag"><code>restarter-tag</code></a></li>
+          <li><a href="#restarter-description"><code>restarter-description</code></a></li>
+          <li><a href="#restarter-who"><code>restarter-who</code></a></li>
+          <li><a href="#restarter-condition-predicate"><code>restarter-condition-predicate</code></a></li>
+          <li><a href="#restarter-formals"><code>restarter-formals</code></a></li>
+          <li><a href="#restart"><code>restart</code></a></li>
+          <li><a href="#interactors">Interactors</a>
+            <ul>
+              <li><a href="#restart"><code>restart</code></a></li>
+              <li><a href="#current-interactor"><code>current-interactor</code></a></li>
+              <li><a href="#with-current-interactor"><code>with-current-interactor</code></a></li>
+            </ul>
+          </li>
+        </ul>
       </li>
       <li>
         <a href="#syntax">Syntax</a>
-        <ol>
-          <li><a href="#restartable-procedures">Restartable procedures</a></li>
-          <li><a href="#restartable-procedure-definitions">Restartable procedure definitions</a></li>
-        </ol>
+        <ul>
+          <li><a href="#restarter-guard"><code>restarter-guard</code></a></li>
+          <li><a href="#restartable-procedures">Restartable procedures</a>
+            <ul>
+              <li><a href="#restartable"><code>restartable</code></a></li>
+            </ul>
+          </li>
+          <li><a href="#restartable-procedure-definitions">Restartable procedure definitions</a>
+            <ul>
+              <li><a href="#define-restartable"><code>define-restartable</code></a></li>
+            </ul>
+          </li>
+        </ul>
       </li>
-      <li><a href="#standard-restart-tags">Proposed standard restart tags</a></li>
-    </ol>
+      <li><a href="#standard-restart-tags">Proposed standard restart tags</a>
+        <ul>
+          <li><a href="#abort"><code>abort</code></a></li>
+          <li><a href="#ignore"><code>ignore</code></a></li>
+          <li><a href="#retry"><code>retry</code></a></li>
+          <li><a href="#use-arguments"><code>use-arguments</code></a></li>
+        </ul>
+      </li>
+    </ul>
   </li>
   <li><a href="#implementation">Implementation</a></li>
   <li><a href="#acknowledgements">Acknowledgements</a></li>
   <li><a href="#references">References</a></li>
-</ol>
+</ul>
 
 <h2 id="abstract">Abstract</h2>
 
@@ -245,7 +275,7 @@ invoke them must obey the following protocol:</p>
 
 <h3 id="procedures">Procedures</h3>
 
-<p><code>(make-restarter</code> <var>tag</var> <var>description</var>
+<p id="make-restarter"><code>(make-restarter</code> <var>tag</var> <var>description</var>
 <var>who</var> <var>formals</var> <var>condition-predicate</var>
 <var>invoker</var><code>)</code> →
 <span class="type-meta">restarter</span></p>
@@ -289,26 +319,26 @@ restart[0]&gt; <samp>(return-value 4)</samp>
 
   ⇒ 4</code></pre>
 
-<p><code>(restarter?</code> <var>obj</var><code>)</code> →
+<p id="restarter-p"><code>(restarter?</code> <var>obj</var><code>)</code> →
 <span class="type-meta">boolean</span></p>
 
 <p>Returns <code>#t</code> if <var>obj</var> is a restarter and
 <code>#f</code> otherwise.</p>
 
-<p><code>(restarter-tag</code> <var>restarter</var><code>)</code> →
+<p id="restarter-tag"><code>(restarter-tag</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">symbol</span><br>
 
-<code>(restarter-description</code> <var>restarter</var><code>)</code> →
+<code id="restarter-description">(restarter-description</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">string</span><br>
 
-<code>(restarter-who</code> <var>restarter</var><code>)</code> →
+<code id="restarter-who">(restarter-who</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">symbol-or-string</span><br>
 
-<code>(restarter-condition-predicate</code>
+<code id="restarter-condition-predicate">(restarter-condition-predicate</code>
 <var>restarter</var><code>)</code> →
 <span class="type-meta">procedure</span><br>
 
-<code>(restarter-formals</code> <var>restarter</var><code>)</code> →
+<code id="restarter-formals">(restarter-formals</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">pair-or-symbol</span></p>
 
 <p>Returns the tag / description / who / condition predicate /
@@ -316,7 +346,7 @@ formals of <var>restarter</var>.
 The effect of mutating the values returned by these procedures is
 undefined.</p>
 
-<p><code>(restart</code> <var>restarter</var> <var>arg</var>
+<p id="restart"><code>(restart</code> <var>restarter</var> <var>arg</var>
 …<code>)</code> → does not return</p>
 
 <p>Invokes the invoker procedure of <var>restarter</var> on the
@@ -347,12 +377,12 @@ restarter’s invoker).</p>
 presented in examples throughout this document. These examples are
 non-normative.)</p>
 
-<p><code>current-interactor</code></p>
+<p id="current-interactor"><code>current-interactor</code></p>
 
 <p>A <a href="https://srfi.schemers.org/srfi-39/">SRFI 39</a> / R7RS
 parameter object whose value is an interactor procedure.</p>
 
-<p><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
+<p id="with-current-interactor"><code>(with-current-interactor</code> <var>thunk</var><code>)</code></p>
 
 <p>Returns the results of invoking <var>thunk</var>. An
 exception handler is installed for the dynamic extent (as determined by
@@ -477,7 +507,7 @@ restart[0]&gt; <samp>(return-numerator)</samp>
 
 <h4 id="restartable-procedures">Restartable procedures</h4>
 
-<p>The <code>restartable</code>
+<p id="restartable">The <code>restartable</code>
 form wraps a procedure in code allowing
 it to be re-invoked on new arguments if an assertion
 violation occurs.</p>
@@ -559,7 +589,7 @@ restart[0]&gt;</code> <samp>(use-arguments -1)</samp>
 
 <h4 id="restartable-procedure-definitions">Restartable procedure definitions</h4>
 
-<p>A restartable procedure definition takes one of the following
+<p id="define-restartable">A restartable procedure definition takes one of the following
 forms:</p>
 
 <ul>
@@ -618,21 +648,21 @@ restart[0]&gt;</code> <samp>(use-arguments 4 2)</samp>
 when naming their restarters.</p>
 
 <dl>
-  <dt class="tag-name">abort</dt>
+  <dt class="tag-name" id="abort">abort</dt>
   <dd>Completely aborts the computation. The invoker of an
   <code>abort</code> restarter accepts zero arguments.</dd>
 
-  <dt class="tag-name">ignore</dt>
+  <dt class="tag-name" id="ignore">ignore</dt>
   <dd>Ignores the condition and proceeds. The invoker of an
   <code>ignore</code> restarter accepts zero arguments.</dd>
 
-  <dt class="tag-name">retry</dt>
+  <dt class="tag-name" id="retry">retry</dt>
   <dd>Simply retries a whole computation from a certain point, with no
   explicitly altered inputs. Some implicit environmental changes are
   expected to have taken place. The invoker of a <code>retry</code>
   restarter accepts zero arguments.</dd>
 
-  <dt class="tag-name">use-arguments</dt>
+  <dt class="tag-name" id="use-arguments">use-arguments</dt>
   <dd>Retries the invocation of some procedure, using new arguments.
   The invoker of a <code>use-arguments</code> restarter accepts zero
   or more arguments. This is the tag protocol used by
