@@ -292,6 +292,17 @@ the condition types <code>&amp;who</code> or
 
 <h5>Example:</h5>
 
+<p>The following example defines a simple restartable version of the
+<code>/</code> procedure. If <code>/</code> raises any condition, then
+<code>safe-/</code> compounds that condition with a
+<a href="#use-arguments"><code>use-arguments</code></a> restarter and
+re-raises it.</p>
+
+<p>(This is not the recommended way of defining restartable procedures,
+but is included as an example of building and installing restarters
+“by hand”. <a href="#define-restartable"><code>define-restartable</code></a>
+provides a much more compact syntax for the same thing.)</p>
+
 <pre class="example"><code>(define (safe-/ x y)
   (call/cc
    (lambda (return-value)
@@ -559,26 +570,25 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
 ;; user to provide a list to return as the value of the whole
 ;; 'map-restartable' computation, while the second re-invokes
 ;; *proc* with new arguments.
-(define (map-restartable proc-who proc lis)
+(define (map-restartable proc lis)
   (restarter-guard map-restartable
     (mcon ((use-list new-lis)
            "Return new-lis as the value of map-restartable."
            serious-condition?
            (assert (list? new-lis))
            new-lis))
-    (map (restartable proc-who proc) lis)))
+    (map (restartable "[mapped procedure]" proc) lis)))
 
 &gt;</code> <samp>(with-current-interactor
    (lambda ()
-     (map-restartable "divider"
-                      (lambda (x) (/ 10 x)))
+     (map-restartable (lambda (x) (/ 10 x)))
                       '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
 Who: /
 Message: undefined for 0
 Irritants: (0)
-(use-arguments . args) [divider]: Apply the procedure to new arguments.
+(use-arguments . args) [[mapped procedure]]: Apply the procedure to new arguments.
 (use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
 restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
 
