@@ -78,13 +78,13 @@
 
   ;; Returns an interactor whose interaction level is *level*.
   (define (make-default-interactor level)
-    (lambda (restarters)
+    (lambda (restarter)
       (call-with-current-continuation
        (lambda (abort)
          (let loop ()  ; main interaction loop
            (call-with-current-continuation
             (lambda (retry)
-              (interact restarters level abort retry)))
+              (interact restarter level abort retry)))
               (loop))))))
 
   (define current-interactor
@@ -93,33 +93,44 @@
   (define (with-current-interactor thunk)
     (with-exception-handler
      (lambda (obj)
-       (if (restarter? obj)
-           (let ((restarters
-                  (filter restarter? (simple-conditions obj)))
-                 (interactor (current-interactor)))
-             (interactor restarters)
-             (raise
-              (condition
-               (make-who-condition 'with-current-interactor)
-               (make-message-condition "interactor returned")
-               (make-irritants-condition (list interactor restarters))
-               (make-non-continuable-violation))))
-           (raise-continuable obj)))
+       (cond ((restarter? obj)
+              ((current-interactor) obj)
+              (raise
+               (condition
+                (make-who-condition 'with-current-interactor)
+                (make-message-condition "interactor returned")
+                (make-irritants-condition (list (current-interactor)))
+                (make-non-continuable-violation))))
+             (else (raise-continuable obj))))
      thunk))
+
+  ;; Print some common & useful condition fields, if they're present.
+  (define (show-non-restarter-condition-info con)
+    (for-each (lambda (name pred acc)
+                (when (pred con)
+                  (display name)
+                  (display ": ")
+                  (display (acc con))
+                  (newline)))
+              '("Who" "Message" "Irritants")
+              `(,who-condition? ,message-condition? ,irritants-condition?)
+              `(,condition-who ,condition-message ,condition-irritants)))
 
   ;; Show the interactive user the available restarts, prompt for
   ;; a selection "command-line" and try to run it.
-  (define (interact restarters level abort retry)
+  (define (interact restarter level abort retry)
     ;; Table associating restarter tags with restarters. If there
     ;; are multiple restarters with the same tag, the first (by
-    ;; index in *restarters*) takes priority.
+    ;; index in the simple conditions list) takes priority.
     ;;
     ;; This is a quick-and-dirty way to handle the general problem
     ;; of duplicated restarter tags. A more sophisticated interactor
     ;; might allow the user to disambiguate their choice using the
     ;; restarter's "who" field, or perhaps an index number.
     (define restarters-by-tag
-      (let ((table (make-eqv-hashtable (length restarters))))
+      (let* ((restarters (filter restarter?
+                                 (simple-conditions restarter)))
+             (table (make-eqv-hashtable (length restarters))))
         (for-each (lambda (r)
                     (hashtable-update! table
                                        (restarter-tag r)
@@ -155,6 +166,7 @@
     (with-current-interactor
      (lambda ()
        (display "Restartable exception occurred.\n")
+       (show-non-restarter-condition-info restarter)
        (let-values (((_ks urs) (hashtable-entries restarters-by-tag)))
          (show-restarters (vector->list urs)))
        (let loop ()  ; prompt loop

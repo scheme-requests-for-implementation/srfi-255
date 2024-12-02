@@ -359,10 +359,13 @@ the result is undefined.</p>
 
 <h4 id="interactors">Interactors</h4>
 
-<p>An <dfn>interactor</dfn> is a procedure of one argument, a list
-of restarters, which the interactor presents
-to the user. The information presented should include
-the tag, description, and formals of each restarter. The user
+<p>An <dfn>interactor</dfn> is a procedure that accepts a single
+(usually composite) restarter object.
+The interactor presents the restarters of
+this object to the user. The information presented should include
+the tag, description, who, and formals of each restarter, and may also
+include information from other components (e.g. messages and irritants)
+of the condition argument. The user
 then selects a restarter and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
 
@@ -389,8 +392,8 @@ exception handler is installed for the dynamic extent (as determined by
 <code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If this
 handler is passed a condition with type <code>&amp;restarter</code>,
 then it evaluates
-<code>(current-interactor)</code> and applies the result to
-a list of that condition’s restarters. Non-restarter conditions are
+<code>(current-interactor)</code> and applies the result to that
+condition. Non-restarter conditions are
 re-raised with <code>raise-continuable</code>.</p>
 
 <p>Note that, since the current interactor is retrieved after an
