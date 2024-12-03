@@ -305,14 +305,15 @@ provides a much more compact syntax for the same thing.)</p>
 
 <pre class="example"><code>(define (safe-/ x y)
   (call/cc
-   (lambda (return-value)
+   (lambda (return)
      (let ((val-restarter
-            (make-restarter 'return-value
-                            "Return x."
+            (make-restarter 'use-arguments
+                            "Apply procedure to new arguments."
                             'safe-/
-                            '(x)
+                            '(x y)
                             condition?
-                            return-value)))
+                            (lambda (x y)
+                              (return (safe-/ x y))))))
        (with-exception-handler
         (lambda (con)
           (raise-continuable
@@ -328,8 +329,8 @@ Restartable exception occurred.
 Who: /
 Message: undefined for 0
 Irritants: (0)
-(return-value x) [safe-/]: Return x.
-restart[0]&gt; <samp>(return-value 4)</samp>
+(use-arguments x y) [safe-/]: Apply procedure to new arguments.
+restart[0]&gt; <samp>(use-arguments 8 2)</samp>
 
   ⇒ 4</code></pre>
 
