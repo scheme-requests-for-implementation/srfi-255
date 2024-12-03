@@ -292,16 +292,28 @@ the condition types <code>&amp;who</code> or
 
 <h5>Example:</h5>
 
+<p>The following example defines a simple restartable version of the
+<code>/</code> procedure. If <code>/</code> raises any condition, then
+<code>safe-/</code> compounds that condition with a
+<a href="#use-arguments"><code>use-arguments</code></a> restarter and
+re-raises it.</p>
+
+<p>(This is not the recommended way of defining restartable procedures,
+but is included as an example of building and installing restarters
+“by hand”. <a href="#define-restartable"><code>define-restartable</code></a>
+provides a much more compact syntax for the same thing.)</p>
+
 <pre class="example"><code>(define (safe-/ x y)
   (call/cc
-   (lambda (return-value)
+   (lambda (return)
      (let ((val-restarter
-            (make-restarter 'return-value
-                            "Return x."
+            (make-restarter 'use-arguments
+                            "Apply procedure to new arguments."
                             'safe-/
-                            '(x)
+                            '(x y)
                             condition?
-                            return-value)))
+                            (lambda (x y)
+                              (return (safe-/ x y))))))
        (with-exception-handler
         (lambda (con)
           (raise-continuable
@@ -314,8 +326,11 @@ the condition types <code>&amp;who</code> or
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
-(return-value x) [safe-/]: Return x.
-restart[0]&gt; <samp>(return-value 4)</samp>
+Who: /
+Message: undefined for 0
+Irritants: (0)
+(use-arguments x y) [safe-/]: Apply procedure to new arguments.
+restart[0]&gt; <samp>(use-arguments 8 2)</samp>
 
   ⇒ 4</code></pre>
 
@@ -359,10 +374,13 @@ the result is undefined.</p>
 
 <h4 id="interactors">Interactors</h4>
 
-<p>An <dfn>interactor</dfn> is a procedure of one argument, a list
-of restarters, which the interactor presents
-to the user. The information presented should include
-the tag, description, and formals of each restarter. The user
+<p>An <dfn>interactor</dfn> is a procedure that accepts a single
+(usually composite) restarter object.
+The interactor presents the restarters of
+this object to the user. The information presented should include
+the tag, description, who, and formals of each restarter, and may also
+include information from other components (e.g. messages and irritants)
+of the condition argument. The user
 then selects a restarter and provides any additional data which that
 restarter needs. Finally, the interactor invokes the chosen restarter.</p>
 
@@ -389,9 +407,10 @@ exception handler is installed for the dynamic extent (as determined by
 <code>dynamic-wind</code>) of the invocation of <var>thunk</var>. If this
 handler is passed a condition with type <code>&amp;restarter</code>,
 then it evaluates
-<code>(current-interactor)</code> and applies the result to
-a list of that condition’s restarters. Non-restarter conditions are
-re-raised with <code>raise-continuable</code>.</p>
+<code>(current-interactor)</code> and applies the result to that
+condition. Non-restarter conditions are
+re-raised with <code>raise-continuable</code>. If the interactor returns,
+then a non-continuable exception is raised.</p>
 
 <p>Note that, since the current interactor is retrieved after an
 exception occurs and not when <code>with-current-interactor</code>
@@ -496,6 +515,9 @@ of the <code>restarter-guard</code> expression.</p>
    (lambda () (safe-/ 1 0)))</samp>
 
 Restartable exception occurred.
+Who: /
+Message: undefined for 0
+Irritants: (0)
 (return-value v) [safe-/]: Return a specific value.
 (return-numerator) [safe-/]: Return the numerator.
 (return-zero) [safe-/]: Return zero.
@@ -541,6 +563,9 @@ of the restarter is filled by <var class="syn">who</var>.</p>
           '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
+Who: /
+Message: undefined for 0
+Irritants: (0)
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
 restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
 
@@ -550,23 +575,25 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
 ;; user to provide a list to return as the value of the whole
 ;; 'map-restartable' computation, while the second re-invokes
 ;; *proc* with new arguments.
-(define (map-restartable proc-who proc lis)
+(define (map-restartable proc lis)
   (restarter-guard map-restartable
     (mcon ((use-list new-lis)
            "Return new-lis as the value of map-restartable."
            serious-condition?
            (assert (list? new-lis))
            new-lis))
-    (map (restartable proc-who proc) lis)))
+    (map (restartable "[mapped procedure]" proc) lis)))
 
 &gt;</code> <samp>(with-current-interactor
    (lambda ()
-     (map-restartable "divider"
-                      (lambda (x) (/ 10 x)))
+     (map-restartable (lambda (x) (/ 10 x)))
                       '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
-(use-arguments . args) [divider]: Apply the procedure to new arguments.
+Who: /
+Message: undefined for 0
+Irritants: (0)
+(use-arguments . args) [[mapped procedure]]: Apply the procedure to new arguments.
 (use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
 restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
 
@@ -579,6 +606,9 @@ restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
                       '(1 2 0 4))))</samp>
 
 <code>Restartable exception occurred.
+Who: /
+Message: undefined for 0
+Irritants: (0)
 (use-arguments . args) [divider]: Apply the procedure to new arguments.
 (use-list new-lis) [map-restartable]: Return new-lis as the value of map-restartable.
 restart[0]&gt;</code> <samp>(use-arguments -1)</samp>
@@ -635,6 +665,9 @@ forms:</p>
    (lambda () (safe-/ 4 0)))</samp>
 
 <code>Restartable exception occurred.
+Who: /
+Message: undefined for 0
+Irritants: (0)
 (use-arguments x y) [safe-/]: Apply the procedure to new arguments.
 restart[0]&gt;</code> <samp>(use-arguments 4 2)</samp>
 

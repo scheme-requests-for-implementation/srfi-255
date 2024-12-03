@@ -134,11 +134,12 @@
  (guard (con
          ((assertion-violation? con) 0))
    (parameterize ((current-interactor
-                   (lambda (rs)
-                     (let ((r (find (lambda (r)
-                                      (eqv? (restarter-tag r)
-                                            'return-1))
-                                    rs)))
+                   (lambda (con)
+                     (let ((r (find (lambda (c)
+                                      (and (restarter? c)
+                                           (eqv? (restarter-tag r)
+                                                 'return-1)))
+                                    (simple-conditions con))))
                        (and r (restart r))))))
      (with-current-interactor
       (lambda ()
@@ -228,11 +229,12 @@
  (with-current-interactor
   (lambda ()
     (parameterize ((current-interactor
-                    (lambda (rs)
-                      (let ((r (find (lambda (r)
-                                       (eqv? (restarter-tag r)
-                                             'return-zero))
-                                     rs)))
+                    (lambda (con)
+                      (let ((r (find (lambda (c)
+                                       (and (restarter? c)
+                                            (eqv? (restarter-tag c)
+                                                  'return-zero)))
+                                     (simple-conditions con))))
                         (and r (restart r))))))
       (restarter-guard somewhere
        (con ((return-zero)
