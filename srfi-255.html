@@ -309,8 +309,7 @@ provides a much more compact syntax for the same thing.)</p>
                con)))
         (lambda () (/ x y)))))))
 
-&gt; <samp>(with-current-interactor
-   (lambda () (safe-/ 1 0)))</samp>
+&gt; <samp>(safe-/ 1 0)</samp>
 
 Restartable exception occurred.
 Who: /
@@ -492,8 +491,7 @@ of the <code>restarter-guard</code> expression.</p>
           0))
     (/ a b)))
 
-&gt; <samp>(with-current-interactor
-   (lambda () (safe-/ 1 0)))</samp>
+&gt; <samp>(safe-/ 1 0)</samp>
 
 Restartable exception occurred.
 Who: /
@@ -538,10 +536,8 @@ of the restarter is filled by <var class="syn">who</var>.</p>
 
 <h5>Examples:</h5>
 
-<pre class="example"><code>&gt;</code> <samp>(with-current-interactor
-   (lambda ()
-     (map (restartable "divider" (lambda (x) (/ 10 x)))
-          '(1 2 0 4))))</samp>
+<pre class="example"><code>&gt;</code> <samp>(map (restartable "divider" (lambda (x) (/ 10 x)))
+       '(1 2 0 4))</samp>
 
 <code>Restartable exception occurred.
 Who: /
@@ -565,10 +561,8 @@ restart[0]&gt;</code> <samp>(use-arguments 3)</samp>
            new-lis))
     (map (restartable "[mapped procedure]" proc) lis)))
 
-&gt;</code> <samp>(with-current-interactor
-   (lambda ()
-     (map-restartable (lambda (x) (/ 10 x)))
-                      '(1 2 0 4))))</samp>
+&gt;</code> <samp>(map-restartable (lambda (x) (/ 10 x))
+                   '(1 2 0 4))</samp>
 
 <code>Restartable exception occurred.
 Who: /
@@ -580,11 +574,9 @@ restart[0]&gt;</code> <samp>(use-list '(#f))</samp>
 
   ⇒ (#f)
 
-<code>&gt;</code> <samp>(with-current-interactor
-   (lambda ()
-     (map-restartable "divider"
-                      (lambda (x) (/ 10 x)))
-                      '(1 2 0 4))))</samp>
+<code>&gt;</code> <samp>(map-restartable "divider"
+                   (lambda (x) (/ 10 x))
+                   '(1 2 0 4))</samp>
 
 <code>Restartable exception occurred.
 Who: /
@@ -642,8 +634,7 @@ forms:</p>
 <pre class="example"><code>(define-restartable (safe-/ x y)
   (/ x y))
 
-&gt;</code> <samp>(with-current-interactor
-   (lambda () (safe-/ 4 0)))</samp>
+&gt;</code> <samp>(safe-/ 4 0)</samp>
 
 <code>Restartable exception occurred.
 Who: /
