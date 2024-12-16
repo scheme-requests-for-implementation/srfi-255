@@ -86,7 +86,6 @@
           <li><a href="#restarter-tag"><code>restarter-tag</code></a></li>
           <li><a href="#restarter-description"><code>restarter-description</code></a></li>
           <li><a href="#restarter-who"><code>restarter-who</code></a></li>
-          <li><a href="#restarter-condition-predicate"><code>restarter-condition-predicate</code></a></li>
           <li><a href="#restarter-formals"><code>restarter-formals</code></a></li>
           <li><a href="#restart"><code>restart</code></a></li>
           <li><a href="#interactors">Interactors</a>
@@ -204,7 +203,7 @@ in the Scheme Reports: names such as <var>symbol</var>,
 <p>A <dfn>restarter</dfn> is a condition object (see the <cite>R6RS
 standard libraries</cite> document, Section 7.2) of type
 <code>&amp;restarter</code>.
-It has five fields:</p>
+It has the following fields:</p>
 
 <dl>
   <dt>tag</dt>
@@ -224,11 +223,6 @@ It has five fields:</p>
   4.1.4 of <cite>R7RS Small</cite>, describing the arguments expected by the
   restarter’s <var>invoker</var>.</dd>
 
-  <dt id="condition-predicate">condition-predicate</dt>
-  <dd>A procedure which returns true when applied to a condition object
-  <var>c</var> when the restarter can be used to restart the computation
-  that raised <var>c</var>. Otherwise, it returns <code>#f</code>.</dd>
-
   <dt>invoker</dt>
   <dd>A procedure that actually performs the recovery. It must not
   return. The number of arguments it expects is given by
@@ -243,7 +237,6 @@ It has five fields:</p>
   (description restarter-description)
   (who restarter-who)
   (formals restarter-formals)
-  (condition-predicate restarter-condition-predicate)
   (invoker restarter-invoker))</code></pre>
 
 <p>A restarter’s fields
@@ -264,11 +257,6 @@ invoke them must obey the following protocol:</p>
     composite condition (see Section 7.2.1 of the <cite>R6RS</cite>) including the
     object raised by the triggering exception as one of its components.</p>
   </li>
-  <li>
-    <p>A handler must not invoke a restarter if the object
-    raised by the triggering exception does not satisfy that restarter’s
-    condition predicate.</p>
-  </li>
 </ul>
 
 <!-- Procedures section -->
@@ -276,7 +264,7 @@ invoke them must obey the following protocol:</p>
 <h3 id="procedures">Procedures</h3>
 
 <p id="make-restarter"><code>(make-restarter</code> <var>tag</var> <var>description</var>
-<var>who</var> <var>formals</var> <var>condition-predicate</var>
+<var>who</var> <var>formals</var>
 <var>invoker</var><code>)</code> →
 <span class="type-meta">restarter</span></p>
 
@@ -311,13 +299,12 @@ provides a much more compact syntax for the same thing.)</p>
                             "Apply procedure to new arguments."
                             'safe-/
                             '(x y)
-                            condition?
                             (lambda (x y)
                               (return (safe-/ x y))))))
        (with-exception-handler
         (lambda (con)
           (raise-continuable
-           (if ((restarter-condition-predicate val-restarter) con)
+           (if (condition? con)
                (condition con val-restarter)
                con)))
         (lambda () (/ x y)))))))
@@ -349,14 +336,10 @@ restart[0]&gt; <samp>(use-arguments 8 2)</samp>
 <code id="restarter-who">(restarter-who</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">symbol-or-string</span><br>
 
-<code id="restarter-condition-predicate">(restarter-condition-predicate</code>
-<var>restarter</var><code>)</code> →
-<span class="type-meta">procedure</span><br>
-
 <code id="restarter-formals">(restarter-formals</code> <var>restarter</var><code>)</code> →
 <span class="type-meta">pair-or-symbol</span></p>
 
-<p>Returns the tag / description / who / condition predicate /
+<p>Returns the tag / description / who /
 formals of <var>restarter</var>.
 The effect of mutating the values returned by these procedures is
 undefined.</p>
@@ -467,7 +450,7 @@ appears in more than one clause.</p>
 <h5>Semantics:</h5>
 
 <p>First, the <var class="syn">pred-expression</var>s are evaluated
-to <a href="#condition-predicate">condition predicates</a> in an
+in an
 unspecified order. Then, an exception handler
 is installed for the dynamic extent (as
 determined by <code>dynamic-wind</code>) of the invocation of
@@ -475,15 +458,13 @@ determined by <code>dynamic-wind</code>) of the invocation of
 constructs a compound restarter condition, which includes the condition
 raised by the triggering exception and
 restarters constructed from the <var class="syn">restarter-clauses</var>,
-and raises it with <code>raise-continuable</code>. Only restarters
-whose condition predicates return true when applied to the raised
-condition are included.</p>
+and raises it with <code>raise-continuable</code>. A restarter is only
+added if the condition predicate of its clause returns true when applied
+to the raised condition.</p>
 
 <p>The who field of each restarter constructed from
 <var class="syn">restarter-clauses</var> is initialized to
-<var class="syn">who</var>, and
-the condition-predicate field to the value of
-<var class="syn">pred-expression</var>.
+<var class="syn">who</var>.
 Each invoker procedure is constructed from a
 <var class="syn">formals</var> and a <var class="syn">restarter-body</var>.
 If <var class="syn">condition-var</var> was provided, then the condition

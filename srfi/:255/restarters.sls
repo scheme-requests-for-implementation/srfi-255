@@ -31,7 +31,6 @@
           restarter-formals
           restarter-description
           restarter-invoker
-          restarter-condition-predicate
           restarter-who
           restart
           define-restartable
@@ -59,7 +58,6 @@
     (description restarter-description)
     (who restarter-who)
     (formals restarter-formals)
-    (condition-predicate restarter-condition-predicate)
     (invoker restarter-invoker))
 
   (define (restart restarter . args)
@@ -194,11 +192,11 @@
                 (newline))
               restarters))
 
-  ;; Filter *restarters* for only those restarters that accept
-  ;; the condition *con*.
-  (define (matching-restarters con restarters)
-    (filter (lambda (r) ((restarter-condition-predicate r) con))
-            restarters))
+  ;; *alist* is a (Predicate . Restarter) alist. Returns a list
+  ;; of only those restarters from *alist* whose predicates are
+  ;; satisfied by *con*.
+  (define (matching-restarters con alist)
+    (map cdr (filter (lambda (p) ((car p) con)) alist)))
 
   (define-syntax restarter-guard
     (lambda (syn)
@@ -230,28 +228,28 @@
                                           description
                                           'who
                                           'arg*
-                                          pred-expr
                                           (lambda arg*
                                             (k (lambda ()
                                                  e1 e2 ...))))) ...)
-                   (with-exception-handler
-                    (lambda (con)
-                      (raise-continuable
-                       (if (condition? con)
-                           (apply condition
-                                  con
-                                  (matching-restarters con (list r ...)))
-                           con)))
-                    (lambda ()
-                      ;; The body must be evaluated in the dynamic
-                      ;; extent of the handler we just installed, so
-                      ;; we can't just apply k to (lambda () body ...).
-                      ;; Instead, we have a little dance to do.
-                      (call-with-values
-                       (lambda () body1 body2 ...)
-                       (lambda vals
-                         (k (lambda ()
-                              (apply values vals))))))))))))))))))
+                   (let ((alis (list (cons pred-expr r) ...)))
+                     (with-exception-handler
+                      (lambda (con)
+                        (raise-continuable
+                         (if (condition? con)
+                             (apply condition
+                                    con
+                                    (matching-restarters con alis))
+                             con)))
+                      (lambda ()
+                        ;; The body must be evaluated in the dynamic
+                        ;; extent of the handler we just installed, so
+                        ;; we can't just apply k to (lambda () body ...).
+                        ;; Instead, we have a little dance to do.
+                        (call-with-values
+                         (lambda () body1 body2 ...)
+                         (lambda vals
+                           (k (lambda ()
+                                (apply values vals)))))))))))))))))))
 
   (define-syntax restartable
     (syntax-rules (lambda)

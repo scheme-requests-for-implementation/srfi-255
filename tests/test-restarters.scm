@@ -62,7 +62,7 @@
      (lambda (con) (restart/tag 'use-value con #t))
      (lambda ()
        (raise-continuable
-        (make-restarter 'use-value "Return x." 'foo '(x) condition? k)))))))
+        (make-restarter 'use-value "Return x." 'foo '(x) k)))))))
 
 (test-assert "restarter objects 2"
  (call-with-current-continuation
@@ -75,7 +75,6 @@
                         "Return (not x)."
                         'foo
                         '(x)
-                        condition?
                         (lambda (x) (k (not x))))))))))
 
 (test-equal "restarter objects 3"
@@ -97,7 +96,6 @@
                             "Return restarter info as a list."
                             'foo
                             '()
-                            condition?
                             dump)))
 
          (raise-continuable r)))))))
