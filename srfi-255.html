@@ -629,6 +629,10 @@ forms:</p>
   </li>
 </ul>
 
+<p>It is recommended that implementations ensure that the last expression
+within the <var class="syn">body</var> of a <code>define-restartable</code>
+form occurs in a tail context (see <cite>R7RS</cite> §3.5).</p>
+
 <h5>Example:</h5>
 
 <pre class="example"><code>(define-restartable (safe-/ x y)
