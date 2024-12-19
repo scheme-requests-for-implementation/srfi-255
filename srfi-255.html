@@ -111,6 +111,8 @@
               <li><a href="#define-restartable"><code>define-restartable</code></a></li>
             </ul>
           </li>
+          <li><a href="#tail-calls">Tail calls and restartable
+            procedures</a></li>
         </ul>
       </li>
       <li><a href="#standard-restart-tags">Proposed standard restart tags</a>
@@ -630,10 +632,6 @@ forms:</p>
   </li>
 </ul>
 
-<p>It is recommended that implementations ensure that the last expression
-within the <var class="syn">body</var> of a <code>define-restartable</code>
-form occurs in a tail context (see <cite>R7RS</cite> §3.5).</p>
-
 <h5>Example:</h5>
 
 <pre class="example"><code>(define-restartable (safe-/ x y)
@@ -649,6 +647,24 @@ Irritants: (0)
 restart[0]&gt;</code> <samp>(use-arguments 4 2)</samp>
 
   <code>⇒ 2</code></pre>
+
+<h4 id="tail-calls">Tail calls and restartable procedures</h4>
+
+<p>In the above forms, it is recommended that implementers ensure
+that the last expression in a <var class="syn">body</var> occur in a
+tail context (see <cite>R7RS</cite> §3.5). This may be difficult or
+impossible in R6RS or R7RS Scheme, since the <var>thunk</var> argument
+of the <code>with-exception-handler</code> primitive does not necessarily
+occur in a tail context.</p>
+
+<p>Even if restartable procedures are implemented to give proper
+tail-calls, a recursive restartable procedure will still accumulate
+context in the form of additional handlers. (This problem afflicts
+all recursive Scheme procedures which call themselves after
+installing an exception handler.) Users are advised to enclose
+recursive computations (using <code>letrec</code>, etc.) within
+restarter forms, rather than writing restartable procedures that
+call themselves.</p>
 
 <!-- Standard restart tags section -->
 
