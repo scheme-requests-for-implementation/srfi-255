@@ -119,6 +119,7 @@
           <li><a href="#ignore"><code>ignore</code></a></li>
           <li><a href="#retry"><code>retry</code></a></li>
           <li><a href="#use-arguments"><code>use-arguments</code></a></li>
+          <li><a href="#raise"><code>raise</code></a></li>
         </ul>
       </li>
     </ul>
@@ -676,6 +677,11 @@ when naming their restarters.</p>
   The invoker of a <code>use-arguments</code> restarter accepts zero
   or more arguments. This is the tag protocol used by
   <code>restartable</code> and <code>define-restartable</code>.</dd>
+
+  <dt class="tag-name" id="raise">raise</dt>
+  <dd>Invokes <code>raise</code> on the original triggering condition,
+  aborting the pending restart. The invoker of a <code>raise</code>
+  restarter accepts zero arguments.</dd>
 </dl>
 
 <!-- Implementation section -->
